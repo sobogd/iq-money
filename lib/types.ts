@@ -31,6 +31,5 @@ export type CategoryPlan = {
   id: string;
   categoryId: string;
   amount: number; // planned monthly euro cents, positive
-  dayOfMonth: number; // 1..31
   category: Category | null;
 };

@@ -24,10 +24,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const categoryId = String(body?.categoryId || "");
   const amount = Number(body?.amount);
-  const dayOfMonth = Number(body?.dayOfMonth);
   if (!categoryId) return NextResponse.json({ error: "categoryId required" }, { status: 400 });
-  if (!Number.isInteger(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31)
-    return NextResponse.json({ error: "dayOfMonth 1..31" }, { status: 400 });
 
   // amount <= 0 → clear the plan for this category.
   if (!Number.isInteger(amount) || amount <= 0) {
@@ -37,8 +34,8 @@ export async function POST(req: Request) {
 
   const plan = await prisma.categoryPlan.upsert({
     where: { categoryId },
-    create: { categoryId, amount, dayOfMonth, createdBy: g.owner },
-    update: { amount, dayOfMonth, active: true },
+    create: { categoryId, amount, createdBy: g.owner },
+    update: { amount, active: true },
     include: { category: true },
   });
   return NextResponse.json(plan, { status: 201 });

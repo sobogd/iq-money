@@ -27,13 +27,12 @@ model Category {
 }
 
 // Monthly planned sum for a category (one per category). `amount` is the
-// expected monthly total; `dayOfMonth` is its approximate charge day. The plan
-// is matched against real spending by category over the calendar month.
+// expected monthly total; it is matched against real spending by category over
+// the calendar month (no per-day timing).
 model CategoryPlan {
   id         String   @id @default(cuid())
   categoryId String   @unique
   amount     Int // planned monthly minor units (euro cents), positive
-  dayOfMonth Int // 1..31, approximate charge day
   active     Boolean  @default(true)
   createdBy  String   @default("")
   createdAt  DateTime @default(now())

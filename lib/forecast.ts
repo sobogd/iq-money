@@ -11,7 +11,7 @@ export type Occurrence = {
   amount: number; // remaining cents for that month, positive
   color: string;
   icon: string;
-  date: Date; // expected charge date (plan day, clamped)
+  date: Date; // end of the month this occurrence belongs to
   running: number; // projected balance right after this occurrence
 };
 
@@ -20,9 +20,8 @@ export type Forecast = {
   occurrences: Occurrence[];
 };
 
-function clampDay(year: number, monthIdx: number, day: number): Date {
-  const last = new Date(year, monthIdx + 1, 0).getDate();
-  return new Date(year, monthIdx, Math.min(day, last));
+function endOfMonth(year: number, monthIdx: number): Date {
+  return new Date(year, monthIdx + 1, 0);
 }
 
 function sameMonth(d: Date, y: number, m: number): boolean {
@@ -32,7 +31,8 @@ function sameMonth(d: Date, y: number, m: number): boolean {
 // Project balance forward to `target`. For each month from the current one to
 // the target month, every active category plan contributes its remaining amount
 // (plan − already-spent-in-category for the current month; full plan for future
-// months). Past months are skipped.
+// months). Timing within a month is ignored — the whole month's plan counts if
+// its month is at or before the target month.
 export function computeForecast(
   plans: CategoryPlan[],
   txs: Transaction[],
@@ -54,7 +54,7 @@ export function computeForecast(
     let y = curY;
     let m = curM;
     while (y < endY || (y === endY && m <= endM)) {
-      const date = clampDay(y, m, plan.dayOfMonth);
+      const date = endOfMonth(y, m);
       const isCurrentMonth = y === curY && m === curM;
 
       let remaining = plan.amount;
@@ -65,7 +65,7 @@ export function computeForecast(
         remaining = Math.max(0, plan.amount - spent);
       }
 
-      if (remaining > 0 && date.getTime() <= target.getTime()) {
+      if (remaining > 0) {
         occ.push({
           categoryId: plan.categoryId,
           name: cat.name,

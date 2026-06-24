@@ -21,12 +21,10 @@ export function CategoryPlanSheet({
   onSaved: () => void;
 }) {
   const [amount, setAmount] = useState(plan ? (plan.amount / 100).toString() : "");
-  const [day, setDay] = useState(plan?.dayOfMonth?.toString() ?? "1");
   const [saving, setSaving] = useState(false);
 
   const cents = parseAmount(amount);
-  const dayNum = parseInt(day, 10);
-  const valid = cents !== null && dayNum >= 1 && dayNum <= 31;
+  const valid = cents !== null;
   const Icon = iconFor(category.icon);
 
   async function submit(clear: boolean) {
@@ -40,7 +38,6 @@ export function CategoryPlanSheet({
       body: JSON.stringify({
         categoryId: category.id,
         amount: clear ? 0 : cents,
-        dayOfMonth: dayNum,
       }),
     });
     setSaving(false);
@@ -65,35 +62,23 @@ export function CategoryPlanSheet({
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1">
-            <span className="text-xs" style={{ color: "var(--hint)" }}>Planned amount / month</span>
-            <div
-              className="flex items-center gap-1 rounded-xl border px-3 py-2.5"
-              style={{ background: "var(--card)", borderColor: "var(--border)" }}
-            >
-              <span style={{ color: "var(--hint)" }}>{CURRENCY_SYMBOL}</span>
-              <input
-                autoFocus
-                inputMode="decimal"
-                placeholder="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-transparent text-sm outline-none"
-              />
-            </div>
-          </label>
-          <label className="flex w-28 flex-col gap-1">
-            <span className="text-xs" style={{ color: "var(--hint)" }}>Day of month</span>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs" style={{ color: "var(--hint)" }}>Planned amount / month</span>
+          <div
+            className="flex items-center gap-1 rounded-xl border px-3 py-2.5"
+            style={{ background: "var(--card)", borderColor: "var(--border)" }}
+          >
+            <span style={{ color: "var(--hint)" }}>{CURRENCY_SYMBOL}</span>
             <input
-              inputMode="numeric"
-              value={day}
-              onChange={(e) => setDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
-              className="rounded-xl border px-3 py-2.5 text-sm outline-none"
-              style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
+              autoFocus
+              inputMode="decimal"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-transparent text-sm outline-none"
             />
-          </label>
-        </div>
+          </div>
+        </label>
 
         <button
           onClick={() => submit(false)}

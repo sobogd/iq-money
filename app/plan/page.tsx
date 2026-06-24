@@ -207,37 +207,46 @@ export default function Plan() {
           </p>
         )}
 
-        {/* per-category monthly plans */}
-        <div className="mt-2 flex flex-col gap-2">
-          <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
-            Category plans
-          </p>
-          {categories.map((c) => {
-            const Icon = iconFor(c.icon);
-            const plan = planByCat.get(c.id);
-            return (
-              <button
-                key={c.id}
-                onClick={() => setEditCat(c)}
-                className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
-                style={{ background: "var(--card)", borderColor: "var(--border)" }}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: c.color + "22", color: c.color }}>
-                  <Icon size={17} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{c.name}</p>
-                  <p className="text-xs" style={{ color: "var(--hint)" }}>
-                    {plan ? `Day ${plan.dayOfMonth} · monthly` : "No plan"}
-                  </p>
-                </div>
-                <span className="shrink-0 text-sm font-semibold" style={{ color: plan ? "var(--text)" : "var(--hint)" }}>
-                  {plan ? formatCents(plan.amount) : "—"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* per-category monthly plans, split by kind */}
+        {([
+          { label: "Expense plans", kind: "expense" as const },
+          { label: "Income plans", kind: "income" as const },
+        ]).map((sec) => {
+          const cats = categories.filter((c) => c.kind === sec.kind);
+          if (cats.length === 0) return null;
+          return (
+            <div key={sec.kind} className="mt-2 flex flex-col gap-2">
+              <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
+                {sec.label}
+              </p>
+              {cats.map((c) => {
+                const Icon = iconFor(c.icon);
+                const plan = planByCat.get(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setEditCat(c)}
+                    className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: c.color + "22", color: c.color }}>
+                      <Icon size={17} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{c.name}</p>
+                      <p className="text-xs" style={{ color: "var(--hint)" }}>
+                        {plan ? "monthly" : "No plan"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold" style={{ color: plan ? (sec.kind === "income" ? "#10b981" : "var(--text)") : "var(--hint)" }}>
+                      {plan ? (sec.kind === "income" ? "+" : "") + formatCents(plan.amount) : "—"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       {editCat && (
