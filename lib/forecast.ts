@@ -57,6 +57,18 @@ export function computeForecast(
       const date = endOfMonth(y, m);
       const isCurrentMonth = y === curY && m === curM;
 
+      // Income is treated as arriving on the 1st: the current month's income has
+      // already happened (it's in the real balance), so never project it for the
+      // current month — only future months count, at the full planned amount.
+      if (isCurrentMonth && cat.kind === "income") {
+        m += 1;
+        if (m > 11) {
+          m = 0;
+          y += 1;
+        }
+        continue;
+      }
+
       let remaining = plan.amount;
       if (isCurrentMonth) {
         const spent = txs
