@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Lock, CalendarClock } from "lucide-react";
-import { TabBar } from "@/components/TabBar";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance } from "@/lib/money";
 import { monthlyForecast, type MonthPoint } from "@/lib/forecast";
@@ -72,7 +71,7 @@ export default function Plan() {
 
   if (loading) {
     return (
-      <main className="flex min-h-[100dvh] items-center justify-center" style={{ background: "var(--bg)", color: "var(--hint)" }}>
+      <main className="flex flex-1 items-center justify-center" style={{ background: "var(--bg)", color: "var(--hint)" }}>
         <Loader2 size={22} className="animate-spin" />
       </main>
     );
@@ -81,7 +80,7 @@ export default function Plan() {
   if (forbidden) {
     const id = telegramUserId();
     return (
-      <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "var(--bg)", color: "var(--text)" }}>
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "var(--bg)", color: "var(--text)" }}>
         <Lock size={30} className="text-emerald-500" />
         <p className="text-base font-medium">Доступ ограничен</p>
         {id && (
@@ -96,7 +95,7 @@ export default function Plan() {
   const final = series[series.length - 1];
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center px-4 pt-6 pb-[calc(6rem_+_env(safe-area-inset-bottom))]" style={{ background: "var(--bg)", color: "var(--text)" }}>
+    <main className="flex flex-1 flex-col items-center overflow-y-auto px-4 pt-6 pb-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <div className="flex w-full max-w-2xl flex-col gap-5">
         <header className="flex items-center gap-2">
           <CalendarClock size={22} className="text-emerald-500" />
@@ -174,7 +173,6 @@ export default function Plan() {
         )}
       </div>
 
-      <TabBar />
     </main>
   );
 }

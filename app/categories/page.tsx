@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Loader2, Lock } from "lucide-react";
 import { CategoryEditor } from "@/components/CategoryEditor";
-import { TabBar } from "@/components/TabBar";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatCents } from "@/lib/money";
 import { iconFor } from "@/lib/icons";
@@ -50,7 +49,7 @@ export default function Categories() {
 
   if (loading) {
     return (
-      <main className="flex min-h-[100dvh] items-center justify-center" style={{ background: "var(--bg)", color: "var(--hint)" }}>
+      <main className="flex flex-1 items-center justify-center" style={{ background: "var(--bg)", color: "var(--hint)" }}>
         <Loader2 size={22} className="animate-spin" />
       </main>
     );
@@ -59,7 +58,7 @@ export default function Categories() {
   if (forbidden) {
     const id = telegramUserId();
     return (
-      <main className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "var(--bg)", color: "var(--text)" }}>
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "var(--bg)", color: "var(--text)" }}>
         <Lock size={30} className="text-emerald-500" />
         <p className="text-base font-medium">Доступ ограничен</p>
         {id && (
@@ -77,7 +76,7 @@ export default function Categories() {
   ];
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center px-4 pt-6 pb-[calc(6rem_+_env(safe-area-inset-bottom))]" style={{ background: "var(--bg)", color: "var(--text)" }}>
+    <main className="flex flex-1 flex-col items-center overflow-y-auto px-4 pt-6 pb-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <div className="flex w-full max-w-2xl flex-col gap-5">
         <h1 className="text-xl font-bold tracking-tight">Categories</h1>
 
@@ -150,7 +149,6 @@ export default function Categories() {
         />
       )}
 
-      <TabBar />
     </main>
   );
 }
