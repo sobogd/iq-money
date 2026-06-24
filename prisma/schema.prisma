@@ -21,47 +21,41 @@ model Category {
   createdAt DateTime @default(now())
 
   transactions Transaction[]
-  plannedItems PlannedItem[]
+  plan         CategoryPlan?
 
   @@map("categories")
 }
 
-// Recurring monthly planned expense/income. `amount` is an ESTIMATE; the real
-// transaction that fulfills it (linked via Transaction.plannedItemId) may differ.
-// `dayOfMonth` is approximate — matching to a real charge allows a ±N day gap.
-model PlannedItem {
+// Monthly planned sum for a category (one per category). `amount` is the
+// expected monthly total; `dayOfMonth` is its approximate charge day. The plan
+// is matched against real spending by category over the calendar month.
+model CategoryPlan {
   id         String   @id @default(cuid())
-  name       String
-  kind       String // "expense" | "income"
-  amount     Int // estimated minor units (euro cents), positive
+  categoryId String   @unique
+  amount     Int // planned monthly minor units (euro cents), positive
   dayOfMonth Int // 1..31, approximate charge day
-  categoryId String?
   active     Boolean  @default(true)
   createdBy  String   @default("")
   createdAt  DateTime @default(now())
 
-  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  transactions Transaction[]
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@map("planned_items")
+  @@map("category_plans")
 }
 
 model Transaction {
-  id            String   @id @default(cuid())
-  kind          String // "expense" | "income"
-  amount        Int // minor units (euro cents) — always positive
-  categoryId    String?
-  plannedItemId String? // set when this real tx fulfills a planned item
-  note          String   @default("")
-  createdBy     String   @default("") // "telegram:<id>"
-  occurredAt    DateTime @default(now())
-  createdAt     DateTime @default(now())
+  id         String   @id @default(cuid())
+  kind       String // "expense" | "income"
+  amount     Int // minor units (euro cents) — always positive
+  categoryId String?
+  note       String   @default("")
+  createdBy  String   @default("") // "telegram:<id>"
+  occurredAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 
-  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  plannedItem PlannedItem? @relation(fields: [plannedItemId], references: [id], onDelete: SetNull)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([occurredAt])
   @@index([categoryId])
-  @@index([plannedItemId])
   @@map("transactions")
 }

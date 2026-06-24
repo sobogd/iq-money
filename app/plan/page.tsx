@@ -1,20 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Lock, CalendarClock } from "lucide-react";
-import { PlannedSheet } from "@/components/PlannedSheet";
+import { Loader2, Lock, CalendarClock } from "lucide-react";
+import { CategoryPlanSheet } from "@/components/CategoryPlanSheet";
 import { TabBar } from "@/components/TabBar";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance, formatCents } from "@/lib/money";
 import { iconFor } from "@/lib/icons";
 import { computeForecast } from "@/lib/forecast";
-import type { Category, PlannedItem, Transaction, TransactionsResponse } from "@/lib/types";
+import type { Category, CategoryPlan, Transaction, TransactionsResponse } from "@/lib/types";
 
 function iso(d: Date): string {
   const off = d.getTimezoneOffset();
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
 }
-
 function endOfMonth(): Date {
   const n = new Date();
   return new Date(n.getFullYear(), n.getMonth() + 1, 0);
@@ -23,7 +22,6 @@ function addMonths(n: number): Date {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth() + n, d.getDate());
 }
-
 function monthLabel(d: Date): string {
   return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
@@ -31,19 +29,18 @@ function monthLabel(d: Date): string {
 export default function Plan() {
   const [balance, setBalance] = useState(0);
   const [txs, setTxs] = useState<Transaction[]>([]);
-  const [planned, setPlanned] = useState<PlannedItem[]>([]);
+  const [plans, setPlans] = useState<CategoryPlan[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [target, setTarget] = useState(() => iso(endOfMonth()));
-  const [showAdd, setShowAdd] = useState(false);
-  const [editItem, setEditItem] = useState<PlannedItem | null>(null);
+  const [editCat, setEditCat] = useState<Category | null>(null);
 
   const load = useCallback(async () => {
     try {
       const [txRes, plRes, catRes] = await Promise.all([
         apiFetch("/api/transactions"),
-        apiFetch("/api/planned"),
+        apiFetch("/api/category-plans"),
         apiFetch("/api/categories"),
       ]);
       if (txRes.status === 403) {
@@ -55,7 +52,7 @@ export default function Plan() {
         setBalance(data.balance);
         setTxs(data.transactions);
       }
-      if (plRes.ok) setPlanned(await plRes.json());
+      if (plRes.ok) setPlans(await plRes.json());
       if (catRes.ok) setCategories(await catRes.json());
     } catch {
       /* ignore */
@@ -73,9 +70,14 @@ export default function Plan() {
   const forecast = useMemo(() => {
     const t = new Date(target + "T23:59:59");
     if (Number.isNaN(t.getTime())) return null;
-    const linked = txs.filter((x) => x.plannedItemId);
-    return computeForecast(balance, planned, linked, t, new Date());
-  }, [balance, planned, txs, target]);
+    return computeForecast(plans, txs, balance, t, new Date());
+  }, [plans, txs, balance, target]);
+
+  const planByCat = useMemo(() => {
+    const m = new Map<string, CategoryPlan>();
+    for (const p of plans) m.set(p.categoryId, p);
+    return m;
+  }, [plans]);
 
   if (loading) {
     return (
@@ -100,13 +102,13 @@ export default function Plan() {
     );
   }
 
-  const presets: { label: string; value: string }[] = [
+  const presets = [
     { label: "End of month", value: iso(endOfMonth()) },
     { label: "+1 month", value: iso(addMonths(1)) },
     { label: "+3 months", value: iso(addMonths(3)) },
   ];
 
-  // Group forecast occurrences by month for the timeline.
+  // Group forecast occurrences by month.
   const groups: { label: string; items: NonNullable<typeof forecast>["occurrences"] }[] = [];
   for (const o of forecast?.occurrences ?? []) {
     const label = monthLabel(o.date);
@@ -116,7 +118,7 @@ export default function Plan() {
   }
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center px-4 pb-28 pt-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
+    <main className="flex min-h-[100dvh] flex-col items-center px-4 pb-24 pt-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <div className="flex w-full max-w-2xl flex-col gap-5">
         <header className="flex items-center gap-2">
           <CalendarClock size={22} className="text-emerald-500" />
@@ -124,30 +126,28 @@ export default function Plan() {
         </header>
 
         {/* target date control */}
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2">
-            {presets.map((p) => (
-              <button
-                key={p.label}
-                onClick={() => setTarget(p.value)}
-                className="rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-95"
-                style={
-                  target === p.value
-                    ? { background: "var(--button)", borderColor: "var(--button)", color: "#fff" }
-                    : { background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }
-                }
-              >
-                {p.label}
-              </button>
-            ))}
-            <input
-              type="date"
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className="rounded-full border px-3 py-1.5 text-xs outline-none"
-              style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
-            />
-          </div>
+        <div className="flex flex-wrap gap-2">
+          {presets.map((p) => (
+            <button
+              key={p.label}
+              onClick={() => setTarget(p.value)}
+              className="rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-95"
+              style={
+                target === p.value
+                  ? { background: "var(--button)", borderColor: "var(--button)", color: "#fff" }
+                  : { background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }
+              }
+            >
+              {p.label}
+            </button>
+          ))}
+          <input
+            type="date"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            className="rounded-full border px-3 py-1.5 text-xs outline-none"
+            style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
+          />
         </div>
 
         {/* projected balance */}
@@ -174,7 +174,7 @@ export default function Plan() {
                 const Icon = iconFor(o.icon);
                 return (
                   <div
-                    key={o.itemId + i}
+                    key={o.categoryId + i}
                     className="flex items-center gap-3 rounded-2xl border p-3"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
@@ -202,77 +202,51 @@ export default function Plan() {
             </div>
           ))
         ) : (
-          <p className="py-6 text-center text-sm" style={{ color: "var(--hint)" }}>
-            No upcoming planned charges before this date.
+          <p className="py-4 text-center text-sm" style={{ color: "var(--hint)" }}>
+            No planned amounts before this date. Set a monthly plan on a category below.
           </p>
         )}
 
-        {/* planned items management */}
+        {/* per-category monthly plans */}
         <div className="mt-2 flex flex-col gap-2">
           <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
-            Recurring items
+            Category plans
           </p>
-          {planned.length === 0 ? (
-            <p className="py-2 text-sm" style={{ color: "var(--hint)" }}>
-              No planned items yet. Add one to forecast your balance.
-            </p>
-          ) : (
-            planned.map((p) => {
-              const Icon = iconFor(p.category?.icon ?? "circle");
-              const color = p.category?.color ?? (p.kind === "income" ? "#10b981" : "#ef4444");
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setEditItem(p)}
-                  className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
-                  style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: color + "22", color }}>
-                    <Icon size={17} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{p.name}</p>
-                    <p className="text-xs" style={{ color: "var(--hint)" }}>
-                      Day {p.dayOfMonth} · monthly
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-sm font-semibold" style={{ color: p.kind === "income" ? "#10b981" : "var(--text)" }}>
-                    {p.kind === "income" ? "+" : "−"}
-                    {formatCents(p.amount)}
-                  </span>
-                </button>
-              );
-            })
-          )}
+          {categories.map((c) => {
+            const Icon = iconFor(c.icon);
+            const plan = planByCat.get(c.id);
+            return (
+              <button
+                key={c.id}
+                onClick={() => setEditCat(c)}
+                className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+                style={{ background: "var(--card)", borderColor: "var(--border)" }}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: c.color + "22", color: c.color }}>
+                  <Icon size={17} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.name}</p>
+                  <p className="text-xs" style={{ color: "var(--hint)" }}>
+                    {plan ? `Day ${plan.dayOfMonth} · monthly` : "No plan"}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm font-semibold" style={{ color: plan ? "var(--text)" : "var(--hint)" }}>
+                  {plan ? formatCents(plan.amount) : "—"}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <button
-        onClick={() => setShowAdd(true)}
-        className="fixed bottom-20 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-90"
-        style={{ background: "var(--button)" }}
-        aria-label="Add planned"
-      >
-        <Plus size={26} />
-      </button>
-
-      {showAdd && (
-        <PlannedSheet
-          categories={categories}
-          onClose={() => setShowAdd(false)}
+      {editCat && (
+        <CategoryPlanSheet
+          category={editCat}
+          plan={planByCat.get(editCat.id)}
+          onClose={() => setEditCat(null)}
           onSaved={() => {
-            setShowAdd(false);
-            load();
-          }}
-        />
-      )}
-      {editItem && (
-        <PlannedSheet
-          categories={categories}
-          edit={editItem}
-          onClose={() => setEditItem(null)}
-          onSaved={() => {
-            setEditItem(null);
+            setEditCat(null);
             load();
           }}
         />

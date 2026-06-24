@@ -15,7 +15,6 @@ export type Transaction = {
   kind: Kind;
   amount: number; // euro cents, positive
   categoryId: string | null;
-  plannedItemId: string | null;
   note: string;
   createdBy: string;
   occurredAt: string; // ISO
@@ -27,12 +26,11 @@ export type TransactionsResponse = {
   transactions: Transaction[];
 };
 
-export type PlannedItem = {
+// Monthly planned sum for one category.
+export type CategoryPlan = {
   id: string;
-  name: string;
-  kind: Kind;
-  amount: number; // estimated euro cents, positive
+  categoryId: string;
+  amount: number; // planned monthly euro cents, positive
   dayOfMonth: number; // 1..31
-  categoryId: string | null;
   category: Category | null;
 };

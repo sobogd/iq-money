@@ -49,7 +49,6 @@ export async function POST(req: Request) {
       kind,
       amount,
       categoryId: body?.categoryId || null,
-      plannedItemId: body?.plannedItemId || null,
       note: String(body?.note || "").trim(),
       createdBy: g.owner,
       occurredAt,

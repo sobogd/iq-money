@@ -23,7 +23,6 @@ export async function PATCH(req: Request, { params }: Ctx) {
     data.amount = amount;
   }
   if (body?.categoryId !== undefined) data.categoryId = body.categoryId || null;
-  if (body?.plannedItemId !== undefined) data.plannedItemId = body.plannedItemId || null;
   if (typeof body?.note === "string") data.note = body.note.trim();
   if (body?.occurredAt) {
     const d = new Date(body.occurredAt);

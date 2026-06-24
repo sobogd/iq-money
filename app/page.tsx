@@ -8,7 +8,7 @@ import { TabBar } from "@/components/TabBar";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance, formatCents } from "@/lib/money";
 import { iconFor } from "@/lib/icons";
-import type { Category, PlannedItem, Transaction, TransactionsResponse } from "@/lib/types";
+import type { Category, Transaction, TransactionsResponse } from "@/lib/types";
 
 function dayLabel(iso: string): string {
   const d = new Date(iso);
@@ -36,7 +36,6 @@ export default function Home() {
   const [balance, setBalance] = useState(0);
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [planned, setPlanned] = useState<PlannedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -45,10 +44,9 @@ export default function Home() {
 
   const load = useCallback(async () => {
     try {
-      const [txRes, catRes, plRes] = await Promise.all([
+      const [txRes, catRes] = await Promise.all([
         apiFetch("/api/transactions"),
         apiFetch("/api/categories"),
-        apiFetch("/api/planned"),
       ]);
       if (txRes.status === 403) {
         setForbidden(true);
@@ -60,7 +58,6 @@ export default function Home() {
         setTxs(data.transactions);
       }
       if (catRes.ok) setCategories(await catRes.json());
-      if (plRes.ok) setPlanned(await plRes.json());
     } catch {
       /* ignore */
     } finally {
@@ -175,7 +172,6 @@ export default function Home() {
       {showAdd && (
         <AddSheet
           categories={categories}
-          planned={planned}
           onClose={() => setShowAdd(false)}
           onSaved={() => {
             setShowAdd(false);
@@ -186,7 +182,6 @@ export default function Home() {
       {editTx && (
         <AddSheet
           categories={categories}
-          planned={planned}
           edit={editTx}
           onClose={() => setEditTx(null)}
           onSaved={() => {
