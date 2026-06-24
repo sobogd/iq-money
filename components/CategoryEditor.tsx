@@ -94,7 +94,7 @@ export function CategoryEditor({
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-xl border px-3 py-2.5 text-sm outline-none"
-          style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
+          style={{ background: "var(--card)", borderColor: "var(--field-border)", color: "var(--text)" }}
         />
 
         <div className="grid grid-cols-2 gap-2 rounded-xl p-1" style={{ background: "var(--bg)" }}>
@@ -152,7 +152,7 @@ export function CategoryEditor({
         </div>
 
         {/* monthly plan */}
-        <div className="mt-1 flex flex-col gap-3 rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+        <div className="mt-1 flex flex-col gap-3 rounded-xl border p-3" style={{ borderColor: "var(--field-border)" }}>
           <p className="text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
             Monthly plan
           </p>
@@ -161,7 +161,7 @@ export function CategoryEditor({
               <span className="text-xs" style={{ color: "var(--hint)" }}>Amount / month</span>
               <div
                 className="flex items-center gap-1 rounded-xl border px-3 py-2.5"
-                style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                style={{ background: "var(--card)", borderColor: "var(--field-border)" }}
               >
                 <span style={{ color: "var(--hint)" }}>{CURRENCY_SYMBOL}</span>
                 <input
@@ -181,7 +181,7 @@ export function CategoryEditor({
                   value={day}
                   onChange={(e) => setDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
                   className="rounded-xl border px-3 py-2.5 text-sm outline-none"
-                  style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
+                  style={{ background: "var(--card)", borderColor: "var(--field-border)", color: "var(--text)" }}
                 />
               </label>
             )}

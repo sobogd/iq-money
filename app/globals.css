@@ -14,6 +14,7 @@
   --text: #18181b;
   --hint: #71717a;
   --border: transparent;
+  --field-border: rgba(0, 0, 0, 0.12); /* subtle outline for inputs only */
   --button: #059669;
   --button-text: #ffffff;
 }
@@ -26,6 +27,7 @@
     --text: #fafafa;
     --hint: #a1a1aa;
     --border: transparent;
+    --field-border: rgba(255, 255, 255, 0.15);
     --button: #10b981;
     --button-text: #ffffff;
   }

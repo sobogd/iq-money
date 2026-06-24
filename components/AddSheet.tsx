@@ -146,14 +146,14 @@ export function AddSheet({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           className="rounded-xl border px-3 py-2.5 text-sm outline-none"
-          style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
+          style={{ background: "var(--card)", borderColor: "var(--field-border)", color: "var(--text)" }}
         />
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           className="rounded-xl border px-3 py-2.5 text-sm outline-none"
-          style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
+          style={{ background: "var(--card)", borderColor: "var(--field-border)", color: "var(--text)" }}
         />
 
         <button
