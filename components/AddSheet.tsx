@@ -110,8 +110,9 @@ export function AddSheet({
           />
         </div>
 
-        {/* categories grid */}
-        <div className="grid grid-cols-4 gap-2">
+        {/* categories — single horizontal-scroll row so the sheet height stays
+            constant regardless of how many categories a kind has */}
+        <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {visible.map((c) => {
             const Icon = iconFor(c.icon);
             const active = categoryId === c.id;
@@ -119,7 +120,7 @@ export function AddSheet({
               <button
                 key={c.id}
                 onClick={() => setCategoryId(active ? null : c.id)}
-                className="flex flex-col items-center gap-1 rounded-xl border p-2 text-center transition active:scale-95"
+                className="flex w-[72px] shrink-0 flex-col items-center gap-1 rounded-xl border p-2 text-center transition active:scale-95"
                 style={{
                   borderColor: active ? c.color : "var(--border)",
                   background: active ? c.color + "22" : "var(--card)",
