@@ -16,7 +16,10 @@ export function TabBar() {
   return (
     <nav
       className="z-30 flex shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
-      style={{ background: "var(--accent)", borderColor: "var(--border)" }}
+      style={{
+        background: "var(--accent)",
+        borderColor: "color-mix(in srgb, var(--border) 35%, transparent)",
+      }}
     >
       {TABS.map(({ href, label, Icon }) => {
         const active = path === href;
