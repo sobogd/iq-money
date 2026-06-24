@@ -77,7 +77,7 @@ export default function Categories() {
   ];
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center px-4 pb-24 pt-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
+    <main className="flex min-h-[100dvh] flex-col items-center px-4 pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)]" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <div className="flex w-full max-w-2xl flex-col gap-5">
         <h1 className="text-xl font-bold tracking-tight">Categories</h1>
 
