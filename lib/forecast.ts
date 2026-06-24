@@ -57,24 +57,19 @@ export function computeForecast(
       const date = endOfMonth(y, m);
       const isCurrentMonth = y === curY && m === curM;
 
-      // Income is treated as arriving on the 1st: the current month's income has
-      // already happened (it's in the real balance), so never project it for the
-      // current month — only future months count, at the full planned amount.
-      if (isCurrentMonth && cat.kind === "income") {
-        m += 1;
-        if (m > 11) {
-          m = 0;
-          y += 1;
-        }
-        continue;
-      }
-
       let remaining = plan.amount;
       if (isCurrentMonth) {
-        const spent = txs
-          .filter((t) => t.categoryId === plan.categoryId && sameMonth(new Date(t.occurredAt), y, m))
-          .reduce((s, t) => s + t.amount, 0);
-        remaining = Math.max(0, plan.amount - spent);
+        if (cat.kind === "income") {
+          // Income arrives on `dayOfMonth`. Before that day → still project the
+          // full planned income. On/after it → the real income (already in the
+          // balance) is used, so project nothing for the current month.
+          if (now.getDate() >= plan.dayOfMonth) remaining = 0;
+        } else {
+          const spent = txs
+            .filter((t) => t.categoryId === plan.categoryId && sameMonth(new Date(t.occurredAt), y, m))
+            .reduce((s, t) => s + t.amount, 0);
+          remaining = Math.max(0, plan.amount - spent);
+        }
       }
 
       if (remaining > 0) {

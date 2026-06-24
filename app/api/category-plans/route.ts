@@ -32,10 +32,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, cleared: true });
   }
 
+  const rawDay = Number(body?.dayOfMonth);
+  const dayOfMonth = Number.isInteger(rawDay) && rawDay >= 1 && rawDay <= 31 ? rawDay : 1;
+
   const plan = await prisma.categoryPlan.upsert({
     where: { categoryId },
-    create: { categoryId, amount, createdBy: g.owner },
-    update: { amount, active: true },
+    create: { categoryId, amount, dayOfMonth, createdBy: g.owner },
+    update: { amount, dayOfMonth, active: true },
     include: { category: true },
   });
   return NextResponse.json(plan, { status: 201 });

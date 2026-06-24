@@ -20,11 +20,14 @@ export function CategoryPlanSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const isIncome = category.kind === "income";
   const [amount, setAmount] = useState(plan ? (plan.amount / 100).toString() : "");
+  const [day, setDay] = useState(plan?.dayOfMonth?.toString() ?? "1");
   const [saving, setSaving] = useState(false);
 
   const cents = parseAmount(amount);
-  const valid = cents !== null;
+  const dayNum = parseInt(day, 10);
+  const valid = cents !== null && (!isIncome || (dayNum >= 1 && dayNum <= 31));
   const Icon = iconFor(category.icon);
 
   async function submit(clear: boolean) {
@@ -38,6 +41,7 @@ export function CategoryPlanSheet({
       body: JSON.stringify({
         categoryId: category.id,
         amount: clear ? 0 : cents,
+        dayOfMonth: isIncome ? dayNum : 1,
       }),
     });
     setSaving(false);
@@ -79,6 +83,26 @@ export function CategoryPlanSheet({
             />
           </div>
         </label>
+
+        {/* income arrival day — drives whether the current month still counts */}
+        {isIncome && (
+          <label className="flex flex-col gap-1">
+            <span className="text-xs" style={{ color: "var(--hint)" }}>
+              Arrival day of month
+            </span>
+            <input
+              inputMode="numeric"
+              value={day}
+              onChange={(e) => setDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              className="w-28 rounded-xl border px-3 py-2.5 text-sm outline-none"
+              style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
+            />
+            <span className="text-[11px]" style={{ color: "var(--hint)" }}>
+              Before this day the planned income still counts this month; on/after
+              it the real income is used.
+            </span>
+          </label>
+        )}
 
         <button
           onClick={() => submit(false)}

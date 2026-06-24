@@ -235,7 +235,11 @@ export default function Plan() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{c.name}</p>
                       <p className="text-xs" style={{ color: "var(--hint)" }}>
-                        {plan ? "monthly" : "No plan"}
+                        {plan
+                          ? sec.kind === "income"
+                            ? `Day ${plan.dayOfMonth} · monthly`
+                            : "monthly"
+                          : "No plan"}
                       </p>
                     </div>
                     <span className="shrink-0 text-sm font-semibold" style={{ color: plan ? (sec.kind === "income" ? "#10b981" : "var(--text)") : "var(--hint)" }}>
