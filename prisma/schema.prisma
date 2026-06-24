@@ -8,4 +8,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Empty skeleton — add models here as features land, then `prisma migrate dev`.
+// Shared household ledger: both allowlisted Telegram users read/write the same
+// data. `createdBy` records who added a row ("telegram:<id>").
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String   @default("circle") // lucide-react icon name
+  color     String   @default("#10b981")
+  kind      String   @default("expense") // "expense" | "income"
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id         String   @id @default(cuid())
+  kind       String // "expense" | "income"
+  amount     Int // minor units (euro cents) — always positive
+  categoryId String?
+  note       String   @default("")
+  createdBy  String   @default("") // "telegram:<id>"
+  occurredAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([occurredAt])
+  @@index([categoryId])
+  @@map("transactions")
+}
