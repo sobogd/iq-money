@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     prisma.transaction.findMany({
       orderBy: { occurredAt: "desc" },
       include: { category: true },
-      take: 500,
+      take: 1000,
     }),
     prisma.transaction.groupBy({ by: ["kind"], _sum: { amount: true } }),
   ]);
@@ -49,6 +49,7 @@ export async function POST(req: Request) {
       kind,
       amount,
       categoryId: body?.categoryId || null,
+      plannedItemId: body?.plannedItemId || null,
       note: String(body?.note || "").trim(),
       createdBy: g.owner,
       occurredAt,

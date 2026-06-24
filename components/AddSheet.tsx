@@ -6,7 +6,7 @@ import { Sheet } from "@/components/Sheet";
 import { apiFetch, haptic } from "@/lib/client";
 import { parseAmount, CURRENCY_SYMBOL } from "@/lib/money";
 import { iconFor } from "@/lib/icons";
-import type { Category, Kind, Transaction } from "@/lib/types";
+import type { Category, Kind, PlannedItem, Transaction } from "@/lib/types";
 
 function todayLocal(): string {
   const d = new Date();
@@ -17,11 +17,13 @@ function todayLocal(): string {
 // Add or edit a transaction. `edit` pre-fills the form and switches to PATCH.
 export function AddSheet({
   categories,
+  planned = [],
   edit,
   onClose,
   onSaved,
 }: {
   categories: Category[];
+  planned?: PlannedItem[];
   edit?: Transaction;
   onClose: () => void;
   onSaved: () => void;
@@ -29,6 +31,7 @@ export function AddSheet({
   const [kind, setKind] = useState<Kind>(edit?.kind ?? "expense");
   const [amount, setAmount] = useState(edit ? (edit.amount / 100).toString() : "");
   const [categoryId, setCategoryId] = useState<string | null>(edit?.categoryId ?? null);
+  const [plannedItemId, setPlannedItemId] = useState<string | null>(edit?.plannedItemId ?? null);
   const [note, setNote] = useState(edit?.note ?? "");
   const [date, setDate] = useState(edit ? edit.occurredAt.slice(0, 10) : todayLocal());
   const [saving, setSaving] = useState(false);
@@ -47,6 +50,19 @@ export function AddSheet({
   const cents = parseAmount(amount);
   const valid = cents !== null;
   const visible = categories.filter((c) => c.kind === kind);
+  const plannedOfKind = planned.filter((p) => p.kind === kind);
+
+  // Linking a real tx to a planned item: prefill amount (estimate) + category
+  // when they're still empty, so confirming a known charge is one tap.
+  function linkPlanned(p: PlannedItem) {
+    if (plannedItemId === p.id) {
+      setPlannedItemId(null);
+      return;
+    }
+    setPlannedItemId(p.id);
+    if (!amount) setAmount((p.amount / 100).toString());
+    if (!categoryId && p.categoryId) setCategoryId(p.categoryId);
+  }
 
   async function save() {
     if (!valid || saving) return;
@@ -56,6 +72,7 @@ export function AddSheet({
       kind,
       amount: cents,
       categoryId,
+      plannedItemId,
       note,
       occurredAt: new Date(date + "T12:00:00").toISOString(),
     };
@@ -82,6 +99,7 @@ export function AddSheet({
               onClick={() => {
                 setKind(k);
                 setCategoryId(null);
+                setPlannedItemId(null);
               }}
               className="rounded-lg py-2 text-sm font-medium transition"
               style={
@@ -138,6 +156,34 @@ export function AddSheet({
             );
           })}
         </div>
+
+        {/* link to a planned item (optional) */}
+        {plannedOfKind.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-medium" style={{ color: "var(--hint)" }}>
+              Planned item (optional)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {plannedOfKind.map((p) => {
+                const active = plannedItemId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => linkPlanned(p)}
+                    className="rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-95"
+                    style={{
+                      borderColor: active ? "var(--button)" : "var(--border)",
+                      background: active ? "var(--button)" : "var(--card)",
+                      color: active ? "#fff" : "var(--text)",
+                    }}
+                  >
+                    {p.name} · ~{(p.amount / 100).toFixed(0)}€
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* note + date */}
         <input

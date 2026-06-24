@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// Edit a transaction (amount/kind/category/note/date).
+// Edit a planned item.
 export async function PATCH(req: Request, { params }: Ctx) {
   const g = gate(req);
   if ("res" in g) return g.res;
@@ -14,37 +14,38 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const body = await req.json().catch(() => null);
   const data: Record<string, unknown> = {};
+  if (typeof body?.name === "string" && body.name.trim()) data.name = body.name.trim();
   if (body?.kind === "income" || body?.kind === "expense") data.kind = body.kind;
   if (body?.amount !== undefined) {
     const amount = Number(body.amount);
-    if (!Number.isInteger(amount) || amount <= 0) {
+    if (!Number.isInteger(amount) || amount <= 0)
       return NextResponse.json({ error: "bad amount" }, { status: 400 });
-    }
     data.amount = amount;
   }
-  if (body?.categoryId !== undefined) data.categoryId = body.categoryId || null;
-  if (body?.plannedItemId !== undefined) data.plannedItemId = body.plannedItemId || null;
-  if (typeof body?.note === "string") data.note = body.note.trim();
-  if (body?.occurredAt) {
-    const d = new Date(body.occurredAt);
-    if (Number.isNaN(d.getTime())) return NextResponse.json({ error: "bad date" }, { status: 400 });
-    data.occurredAt = d;
+  if (body?.dayOfMonth !== undefined) {
+    const d = Number(body.dayOfMonth);
+    if (!Number.isInteger(d) || d < 1 || d > 31)
+      return NextResponse.json({ error: "dayOfMonth 1..31" }, { status: 400 });
+    data.dayOfMonth = d;
   }
+  if (body?.categoryId !== undefined) data.categoryId = body.categoryId || null;
 
-  const tx = await prisma.transaction.update({
+  const item = await prisma.plannedItem.update({
     where: { id },
     data,
     include: { category: true },
   });
-  return NextResponse.json(tx);
+  return NextResponse.json(item);
 }
 
-// Delete a transaction (hard delete — balance recomputes from what remains).
+// Delete (archive) a planned item. Linked real transactions keep their data;
+// the link is nulled by the DB (onDelete: SetNull) only on a hard delete, so we
+// archive to preserve the link history.
 export async function DELETE(req: Request, { params }: Ctx) {
   const g = gate(req);
   if ("res" in g) return g.res;
   const { id } = await params;
 
-  await prisma.transaction.delete({ where: { id } });
+  await prisma.plannedItem.update({ where: { id }, data: { active: false } });
   return NextResponse.json({ ok: true });
 }

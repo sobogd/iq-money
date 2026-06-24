@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, Loader2, Lock, Tags, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { AddSheet } from "@/components/AddSheet";
 import { CategoriesSheet } from "@/components/CategoriesSheet";
+import { TabBar } from "@/components/TabBar";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance, formatCents } from "@/lib/money";
 import { iconFor } from "@/lib/icons";
-import type { Category, Transaction, TransactionsResponse } from "@/lib/types";
+import type { Category, PlannedItem, Transaction, TransactionsResponse } from "@/lib/types";
 
 function dayLabel(iso: string): string {
   const d = new Date(iso);
@@ -35,6 +36,7 @@ export default function Home() {
   const [balance, setBalance] = useState(0);
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [planned, setPlanned] = useState<PlannedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -43,9 +45,10 @@ export default function Home() {
 
   const load = useCallback(async () => {
     try {
-      const [txRes, catRes] = await Promise.all([
+      const [txRes, catRes, plRes] = await Promise.all([
         apiFetch("/api/transactions"),
         apiFetch("/api/categories"),
+        apiFetch("/api/planned"),
       ]);
       if (txRes.status === 403) {
         setForbidden(true);
@@ -57,6 +60,7 @@ export default function Home() {
         setTxs(data.transactions);
       }
       if (catRes.ok) setCategories(await catRes.json());
+      if (plRes.ok) setPlanned(await plRes.json());
     } catch {
       /* ignore */
     } finally {
@@ -161,7 +165,7 @@ export default function Home() {
       {/* FAB */}
       <button
         onClick={() => setShowAdd(true)}
-        className="fixed bottom-6 right-1/2 flex h-14 w-14 translate-x-1/2 items-center justify-center rounded-full text-white shadow-lg transition active:scale-90"
+        className="fixed bottom-20 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-90"
         style={{ background: "var(--button)" }}
         aria-label="Add"
       >
@@ -171,6 +175,7 @@ export default function Home() {
       {showAdd && (
         <AddSheet
           categories={categories}
+          planned={planned}
           onClose={() => setShowAdd(false)}
           onSaved={() => {
             setShowAdd(false);
@@ -181,6 +186,7 @@ export default function Home() {
       {editTx && (
         <AddSheet
           categories={categories}
+          planned={planned}
           edit={editTx}
           onClose={() => setEditTx(null)}
           onSaved={() => {
@@ -196,6 +202,8 @@ export default function Home() {
           onChanged={load}
         />
       )}
+
+      <TabBar />
     </main>
   );
 }
