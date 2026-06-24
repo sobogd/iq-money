@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wallet, CalendarClock } from "lucide-react";
+import { Wallet, CalendarClock, Tags } from "lucide-react";
 
 const TABS = [
   { href: "/", label: "Ledger", Icon: Wallet },
   { href: "/plan", label: "Plan", Icon: CalendarClock },
+  { href: "/categories", label: "Categories", Icon: Tags },
 ];
 
-// Bottom navigation between the real ledger and the forecast/plan screen.
+// Bottom navigation: real ledger, forecast, and category management.
 export function TabBar() {
   const path = usePathname();
   return (

@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Loader2, Lock, Tags, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Plus, Loader2, Lock, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { AddSheet } from "@/components/AddSheet";
-import { CategoriesSheet } from "@/components/CategoriesSheet";
 import { TabBar } from "@/components/TabBar";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance, formatCents } from "@/lib/money";
@@ -39,7 +38,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
-  const [showCats, setShowCats] = useState(false);
   const [editTx, setEditTx] = useState<Transaction | null>(null);
 
   const load = useCallback(async () => {
@@ -102,22 +100,13 @@ export default function Home() {
   return (
     <main className="flex min-h-[100dvh] flex-col items-center px-4 pb-28 pt-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <div className="flex w-full max-w-2xl flex-col gap-5">
-        <header className="flex items-start justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>
-              Balance
-            </p>
-            <p className="mt-1 text-4xl font-bold tracking-tight" style={{ color: balance < 0 ? "#ef4444" : "var(--text)" }}>
-              {formatBalance(balance)}
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCats(true)}
-            className="flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition active:scale-95"
-            style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
-          >
-            <Tags size={16} /> Categories
-          </button>
+        <header>
+          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>
+            Balance
+          </p>
+          <p className="mt-1 text-4xl font-bold tracking-tight" style={{ color: balance < 0 ? "#ef4444" : "var(--text)" }}>
+            {formatBalance(balance)}
+          </p>
         </header>
 
         {txs.length === 0 ? (
@@ -188,13 +177,6 @@ export default function Home() {
             setEditTx(null);
             load();
           }}
-        />
-      )}
-      {showCats && (
-        <CategoriesSheet
-          categories={categories}
-          onClose={() => setShowCats(false)}
-          onChanged={load}
         />
       )}
 

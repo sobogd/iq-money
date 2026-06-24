@@ -2,46 +2,34 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Lock, CalendarClock } from "lucide-react";
-import { CategoryPlanSheet } from "@/components/CategoryPlanSheet";
 import { TabBar } from "@/components/TabBar";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
-import { formatBalance, formatCents } from "@/lib/money";
-import { iconFor } from "@/lib/icons";
-import { computeForecast } from "@/lib/forecast";
-import type { Category, CategoryPlan, Transaction, TransactionsResponse } from "@/lib/types";
+import { formatBalance } from "@/lib/money";
+import { monthlyForecast, type MonthPoint } from "@/lib/forecast";
+import type { CategoryPlan, Transaction, TransactionsResponse } from "@/lib/types";
 
-function iso(d: Date): string {
-  const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
-}
-function endOfMonth(): Date {
-  const n = new Date();
-  return new Date(n.getFullYear(), n.getMonth() + 1, 0);
-}
-function addMonths(n: number): Date {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + n, d.getDate());
-}
-function monthLabel(d: Date): string {
-  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-}
+const HORIZONS = [
+  { label: "1 year", months: 12 },
+  { label: "3 years", months: 36 },
+  { label: "5 years", months: 60 },
+  { label: "10 years", months: 120 },
+];
+
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export default function Plan() {
   const [balance, setBalance] = useState(0);
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [plans, setPlans] = useState<CategoryPlan[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
-  const [target, setTarget] = useState(() => iso(endOfMonth()));
-  const [editCat, setEditCat] = useState<Category | null>(null);
+  const [months, setMonths] = useState(60);
 
   const load = useCallback(async () => {
     try {
-      const [txRes, plRes, catRes] = await Promise.all([
+      const [txRes, plRes] = await Promise.all([
         apiFetch("/api/transactions"),
         apiFetch("/api/category-plans"),
-        apiFetch("/api/categories"),
       ]);
       if (txRes.status === 403) {
         setForbidden(true);
@@ -53,7 +41,6 @@ export default function Plan() {
         setTxs(data.transactions);
       }
       if (plRes.ok) setPlans(await plRes.json());
-      if (catRes.ok) setCategories(await catRes.json());
     } catch {
       /* ignore */
     } finally {
@@ -67,17 +54,21 @@ export default function Plan() {
     load();
   }, [load]);
 
-  const forecast = useMemo(() => {
-    const t = new Date(target + "T23:59:59");
-    if (Number.isNaN(t.getTime())) return null;
-    return computeForecast(plans, txs, balance, t, new Date());
-  }, [plans, txs, balance, target]);
+  const series = useMemo(
+    () => monthlyForecast(plans, txs, balance, new Date(), months),
+    [plans, txs, balance, months],
+  );
 
-  const planByCat = useMemo(() => {
-    const m = new Map<string, CategoryPlan>();
-    for (const p of plans) m.set(p.categoryId, p);
-    return m;
-  }, [plans]);
+  // Group the month points by year.
+  const byYear = useMemo(() => {
+    const groups: { year: number; points: MonthPoint[] }[] = [];
+    for (const p of series) {
+      const last = groups[groups.length - 1];
+      if (last && last.year === p.year) last.points.push(p);
+      else groups.push({ year: p.year, points: [p] });
+    }
+    return groups;
+  }, [series]);
 
   if (loading) {
     return (
@@ -102,20 +93,7 @@ export default function Plan() {
     );
   }
 
-  const presets = [
-    { label: "End of month", value: iso(endOfMonth()) },
-    { label: "+1 month", value: iso(addMonths(1)) },
-    { label: "+3 months", value: iso(addMonths(3)) },
-  ];
-
-  // Group forecast occurrences by month.
-  const groups: { label: string; items: NonNullable<typeof forecast>["occurrences"] }[] = [];
-  for (const o of forecast?.occurrences ?? []) {
-    const label = monthLabel(o.date);
-    const last = groups[groups.length - 1];
-    if (last && last.label === label) last.items.push(o);
-    else groups.push({ label, items: [o] });
-  }
+  const final = series[series.length - 1];
 
   return (
     <main className="flex min-h-[100dvh] flex-col items-center px-4 pb-24 pt-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
@@ -125,145 +103,76 @@ export default function Plan() {
           <h1 className="text-xl font-bold tracking-tight">Plan</h1>
         </header>
 
-        {/* target date control */}
+        {/* now + final projection */}
+        <div className="rounded-2xl border p-4" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>Now</p>
+          <p className="text-2xl font-bold">{formatBalance(balance)}</p>
+          {final && (
+            <p className="mt-2 text-xs" style={{ color: "var(--hint)" }}>
+              In {months / 12 >= 1 ? `${months / 12} yr` : `${months} mo`} →{" "}
+              <span className="font-semibold" style={{ color: final.endBalance < 0 ? "#ef4444" : "var(--text)" }}>
+                {formatBalance(final.endBalance)}
+              </span>
+            </p>
+          )}
+        </div>
+
+        {/* horizon */}
         <div className="flex flex-wrap gap-2">
-          {presets.map((p) => (
+          {HORIZONS.map((h) => (
             <button
-              key={p.label}
-              onClick={() => setTarget(p.value)}
+              key={h.months}
+              onClick={() => setMonths(h.months)}
               className="rounded-full border px-3 py-1.5 text-xs font-medium transition active:scale-95"
               style={
-                target === p.value
+                months === h.months
                   ? { background: "var(--button)", borderColor: "var(--button)", color: "#fff" }
                   : { background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }
               }
             >
-              {p.label}
+              {h.label}
             </button>
           ))}
-          <input
-            type="date"
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-            className="rounded-full border px-3 py-1.5 text-xs outline-none"
-            style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--text)" }}
-          />
         </div>
 
-        {/* projected balance */}
-        <div className="rounded-2xl border p-4" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>
-            Projected balance · {new Date(target + "T00:00:00").toLocaleDateString()}
+        {plans.length === 0 ? (
+          <p className="py-6 text-center text-sm" style={{ color: "var(--hint)" }}>
+            No category plans yet. Set monthly plans in the Categories tab.
           </p>
-          <p className="mt-1 text-3xl font-bold" style={{ color: (forecast?.projected ?? 0) < 0 ? "#ef4444" : "var(--text)" }}>
-            {formatBalance(forecast?.projected ?? balance)}
-          </p>
-          <p className="mt-1 text-xs" style={{ color: "var(--hint)" }}>
-            Now: {formatBalance(balance)}
-          </p>
-        </div>
-
-        {/* forecast timeline */}
-        {groups.length > 0 ? (
-          groups.map((g) => (
-            <div key={g.label} className="flex flex-col gap-2">
-              <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
-                {g.label}
-              </p>
-              {g.items.map((o, i) => {
-                const Icon = iconFor(o.icon);
-                return (
+        ) : (
+          byYear.map((g) => {
+            const yearEnd = g.points[g.points.length - 1].endBalance;
+            return (
+              <div key={g.year} className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between px-1">
+                  <p className="text-sm font-bold">{g.year}</p>
+                  <p className="text-sm font-semibold" style={{ color: yearEnd < 0 ? "#ef4444" : "var(--text)" }}>
+                    {formatBalance(yearEnd)}
+                  </p>
+                </div>
+                {g.points.map((p) => (
                   <div
-                    key={o.categoryId + i}
-                    className="flex items-center gap-3 rounded-2xl border p-3"
+                    key={`${p.year}-${p.monthIdx}`}
+                    className="flex items-center justify-between rounded-xl border px-3 py-2.5"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: o.color + "22", color: o.color }}>
-                      <Icon size={17} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{o.name}</p>
-                      <p className="text-xs" style={{ color: "var(--hint)" }}>
-                        ~{o.date.toLocaleDateString(undefined, { day: "numeric", month: "short" })}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold" style={{ color: o.kind === "income" ? "#10b981" : "var(--text)" }}>
-                        {o.kind === "income" ? "+" : "−"}
-                        {formatCents(o.amount)}
-                      </p>
-                      <p className="text-xs" style={{ color: "var(--hint)" }}>
-                        {formatBalance(o.running)}
-                      </p>
+                    <span className="text-sm" style={{ color: "var(--hint)" }}>{MONTH_NAMES[p.monthIdx]}</span>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-xs" style={{ color: p.net >= 0 ? "#10b981" : "#ef4444" }}>
+                        {p.net >= 0 ? "+" : "−"}
+                        {formatBalance(Math.abs(p.net)).replace("-", "")}
+                      </span>
+                      <span className="w-24 text-right text-sm font-semibold" style={{ color: p.endBalance < 0 ? "#ef4444" : "var(--text)" }}>
+                        {formatBalance(p.endBalance)}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          ))
-        ) : (
-          <p className="py-4 text-center text-sm" style={{ color: "var(--hint)" }}>
-            No planned amounts before this date. Set a monthly plan on a category below.
-          </p>
+                ))}
+              </div>
+            );
+          })
         )}
-
-        {/* per-category monthly plans, split by kind */}
-        {([
-          { label: "Expense plans", kind: "expense" as const },
-          { label: "Income plans", kind: "income" as const },
-        ]).map((sec) => {
-          const cats = categories.filter((c) => c.kind === sec.kind);
-          if (cats.length === 0) return null;
-          return (
-            <div key={sec.kind} className="mt-2 flex flex-col gap-2">
-              <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
-                {sec.label}
-              </p>
-              {cats.map((c) => {
-                const Icon = iconFor(c.icon);
-                const plan = planByCat.get(c.id);
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setEditCat(c)}
-                    className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
-                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: c.color + "22", color: c.color }}>
-                      <Icon size={17} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{c.name}</p>
-                      <p className="text-xs" style={{ color: "var(--hint)" }}>
-                        {plan
-                          ? sec.kind === "income"
-                            ? `Day ${plan.dayOfMonth} · monthly`
-                            : "monthly"
-                          : "No plan"}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-sm font-semibold" style={{ color: plan ? (sec.kind === "income" ? "#10b981" : "var(--text)") : "var(--hint)" }}>
-                      {plan ? (sec.kind === "income" ? "+" : "") + formatCents(plan.amount) : "—"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
       </div>
-
-      {editCat && (
-        <CategoryPlanSheet
-          category={editCat}
-          plan={planByCat.get(editCat.id)}
-          onClose={() => setEditCat(null)}
-          onSaved={() => {
-            setEditCat(null);
-            load();
-          }}
-        />
-      )}
 
       <TabBar />
     </main>
