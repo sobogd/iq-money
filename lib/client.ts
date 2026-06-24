@@ -78,10 +78,9 @@ function applyTheme() {
   set("--card", surface);
   set("--text", p.text_color);
   set("--hint", p.hint_color || p.subtitle_text_color);
-  // Soften the divider: Telegram's separator/hint colors are too contrasty as a
-  // border, so fade it to ~22% over the surface.
-  const sep = p.section_separator_color || p.hint_color;
-  if (sep) set("--border", `color-mix(in srgb, ${sep} 22%, ${surface || "transparent"})`);
+  // No neutral dividers (Telegram-native look): cards stand out by background,
+  // not by lines. Colored active borders (selection) still use their own color.
+  set("--border", "transparent");
   set("--button", p.button_color);
   set("--button-text", p.button_text_color);
   if (p.secondary_bg_color) w?.setBackgroundColor?.(p.secondary_bg_color);

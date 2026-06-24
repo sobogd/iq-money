@@ -13,7 +13,7 @@
   --card: #ffffff; /* message cards — white */
   --text: #18181b;
   --hint: #71717a;
-  --border: #e3e4e8;
+  --border: transparent;
   --button: #059669;
   --button-text: #ffffff;
 }
@@ -25,7 +25,7 @@
     --card: #1b1b1e;
     --text: #fafafa;
     --hint: #a1a1aa;
-    --border: #2a2a2e;
+    --border: transparent;
     --button: #10b981;
     --button-text: #ffffff;
   }
