@@ -41,3 +41,9 @@ body {
   background: var(--bg);
   color: var(--text);
 }
+
+/* Hide the placeholder once the field is focused. */
+input:focus::placeholder,
+textarea:focus::placeholder {
+  color: transparent;
+}
