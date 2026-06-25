@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Sheet } from "@/components/Sheet";
 import { apiFetch, haptic } from "@/lib/client";
 import { parseAmount, CURRENCY_SYMBOL } from "@/lib/money";
-import { iconFor } from "@/lib/icons";
+import { avatarGlyph } from "@/lib/avatar";
 import type { Category, Kind, Transaction } from "@/lib/types";
 
 function todayLocal(): string {
@@ -110,31 +110,24 @@ export function AddSheet({
           />
         </div>
 
-        {/* categories — single horizontal-scroll row so the sheet height stays
-            constant regardless of how many categories a kind has */}
+        {/* categories — single horizontal-scroll row of emoji glyphs so the
+            sheet height stays constant regardless of how many categories exist */}
         <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {visible.map((c) => {
-            const Icon = iconFor(c.icon);
             const active = categoryId === c.id;
             return (
               <button
                 key={c.id}
                 onClick={() => setCategoryId(active ? null : c.id)}
-                className="flex w-[72px] shrink-0 flex-col items-center gap-1 rounded-xl border p-2 text-center transition active:scale-95"
+                title={c.name}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-2xl transition active:scale-90"
                 style={{
                   borderColor: active ? c.color : "var(--border)",
                   background: active ? c.color + "22" : "var(--card)",
+                  color: active ? c.color : "var(--text)",
                 }}
               >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-full"
-                  style={{ background: c.color + "22", color: c.color }}
-                >
-                  <Icon size={18} />
-                </span>
-                <span className="w-full truncate text-[11px]" style={{ color: "var(--text)" }}>
-                  {c.name}
-                </span>
+                {avatarGlyph(c.name)}
               </button>
             );
           })}

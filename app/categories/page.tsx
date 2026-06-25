@@ -5,7 +5,6 @@ import { Plus, Loader2, Lock } from "lucide-react";
 import { CategoryEditor } from "@/components/CategoryEditor";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatCents } from "@/lib/money";
-import { iconFor } from "@/lib/icons";
 import type { Category, CategoryPlan, Kind } from "@/lib/types";
 
 export default function Categories() {
@@ -89,28 +88,22 @@ export default function Categories() {
                 {sec.label}
               </p>
               {cats.map((c) => {
-                const Icon = iconFor(c.icon);
                 const plan = planByCat.get(c.id);
                 return (
                   <button
                     key={c.id}
                     onClick={() => setEdit(c)}
-                    className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+                    className="flex flex-col gap-0.5 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: c.color + "22", color: c.color }}>
-                      <Icon size={18} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{c.name}</p>
-                      <p className="text-xs" style={{ color: "var(--hint)" }}>
-                        {plan
-                          ? sec.kind === "income"
-                            ? `Plan ${formatCents(plan.amount)} · day ${plan.dayOfMonth}`
-                            : `Plan ${formatCents(plan.amount)} / month`
-                          : "No plan"}
-                      </p>
-                    </div>
+                    <p className="truncate font-medium">{c.name}</p>
+                    <p className="text-xs" style={{ color: "var(--hint)" }}>
+                      {plan
+                        ? sec.kind === "income"
+                          ? `Plan ${formatCents(plan.amount)} · day ${plan.dayOfMonth}`
+                          : `Plan ${formatCents(plan.amount)} / month`
+                        : "No plan"}
+                    </p>
                   </button>
                 );
               })}

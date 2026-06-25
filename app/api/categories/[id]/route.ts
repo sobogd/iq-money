@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-// Edit a category (name/icon/color/kind).
+// Edit a category (name/color/kind).
 export async function PATCH(req: Request, { params }: Ctx) {
   const g = gate(req);
   if ("res" in g) return g.res;
@@ -15,7 +15,6 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const body = await req.json().catch(() => null);
   const data: Record<string, unknown> = {};
   if (typeof body?.name === "string" && body.name.trim()) data.name = body.name.trim();
-  if (typeof body?.icon === "string") data.icon = body.icon;
   if (typeof body?.color === "string") data.color = body.color;
   if (body?.kind === "income" || body?.kind === "expense") data.kind = body.kind;
 

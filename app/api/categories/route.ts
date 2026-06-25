@@ -32,7 +32,6 @@ export async function POST(req: Request) {
     data: {
       name,
       kind,
-      icon: String(body?.icon || "circle"),
       color: String(body?.color || "#10b981"),
     },
   });

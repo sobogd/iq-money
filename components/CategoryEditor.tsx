@@ -5,11 +5,11 @@ import { Loader2, Check } from "lucide-react";
 import { Sheet } from "@/components/Sheet";
 import { apiFetch, haptic } from "@/lib/client";
 import { parseAmount, CURRENCY_SYMBOL } from "@/lib/money";
-import { iconFor, ICON_NAMES, COLORS } from "@/lib/icons";
+import { COLORS } from "@/lib/icons";
 import type { Category, CategoryPlan, Kind } from "@/lib/types";
 
-// Unified category editor: name, kind, icon, color AND the monthly plan
-// (amount + income arrival day) — everything for one category in one place.
+// Unified category editor: name (emoji prefix becomes the glyph), kind, color
+// AND the monthly plan (amount + income arrival day) — all in one place.
 export function CategoryEditor({
   category,
   plan,
@@ -23,7 +23,6 @@ export function CategoryEditor({
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [kind, setKind] = useState<Kind>(category?.kind ?? "expense");
-  const [icon, setIcon] = useState(category?.icon ?? "circle");
   const [color, setColor] = useState(category?.color ?? COLORS[0]);
   const [amount, setAmount] = useState(plan ? (plan.amount / 100).toString() : "");
   const [day, setDay] = useState(plan?.dayOfMonth?.toString() ?? "1");
@@ -42,7 +41,7 @@ export function CategoryEditor({
 
     // 1) upsert the category itself
     let categoryId = category?.id;
-    const catBody = { name: name.trim(), kind, icon, color };
+    const catBody = { name: name.trim(), kind, color };
     if (categoryId) {
       await apiFetch(`/api/categories/${categoryId}`, {
         method: "PATCH",
@@ -90,7 +89,7 @@ export function CategoryEditor({
       <div className="flex flex-col gap-4">
         <input
           autoFocus={!category}
-          placeholder="Name"
+          placeholder="Name (start with an emoji, e.g. 🍔 Food)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-xl border px-3 py-2.5 text-sm outline-none"
@@ -112,28 +111,6 @@ export function CategoryEditor({
               {k === "expense" ? "Expense" : "Income"}
             </button>
           ))}
-        </div>
-
-        {/* icon picker */}
-        <div className="grid grid-cols-6 gap-2">
-          {ICON_NAMES.map((n) => {
-            const Icon = iconFor(n);
-            const active = icon === n;
-            return (
-              <button
-                key={n}
-                onClick={() => setIcon(n)}
-                className="flex aspect-square items-center justify-center rounded-xl border transition active:scale-90"
-                style={{
-                  borderColor: active ? color : "var(--border)",
-                  background: active ? color + "22" : "var(--card)",
-                  color: active ? color : "var(--hint)",
-                }}
-              >
-                <Icon size={18} />
-              </button>
-            );
-          })}
         </div>
 
         {/* color picker */}

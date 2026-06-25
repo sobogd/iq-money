@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Loader2, Lock, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Plus, Loader2, Lock } from "lucide-react";
 import { AddSheet } from "@/components/AddSheet";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance, formatCents } from "@/lib/money";
-import { iconFor } from "@/lib/icons";
 import type { Category, Transaction, TransactionsResponse } from "@/lib/types";
 
 function dayLabel(iso: string): string {
@@ -118,30 +117,23 @@ export default function Home() {
               <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
                 {g.label}
               </p>
-              {g.items.map((t) => {
-                const Icon = t.category ? iconFor(t.category.icon) : t.kind === "income" ? ArrowDownLeft : ArrowUpRight;
-                const color = t.category?.color ?? (t.kind === "income" ? "#10b981" : "#ef4444");
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setEditTx(t)}
-                    className="flex items-center gap-3 rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.99]"
-                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: color + "22", color }}>
-                      <Icon size={18} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{t.category?.name ?? (t.kind === "income" ? "Income" : "Expense")}</p>
-                      {t.note && <p className="truncate text-xs" style={{ color: "var(--hint)" }}>{t.note}</p>}
-                    </div>
-                    <span className="shrink-0 font-semibold" style={{ color: t.kind === "income" ? "#10b981" : "var(--text)" }}>
-                      {t.kind === "income" ? "+" : "−"}
-                      {formatCents(t.amount)}
-                    </span>
-                  </button>
-                );
-              })}
+              {g.items.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setEditTx(t)}
+                  className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.99]"
+                  style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{t.category?.name ?? (t.kind === "income" ? "Income" : "Expense")}</p>
+                    {t.note && <p className="truncate text-xs" style={{ color: "var(--hint)" }}>{t.note}</p>}
+                  </div>
+                  <span className="shrink-0 font-semibold" style={{ color: t.kind === "income" ? "#10b981" : "var(--text)" }}>
+                    {t.kind === "income" ? "+" : "−"}
+                    {formatCents(t.amount)}
+                  </span>
+                </button>
+              ))}
             </div>
           ))
         )}
