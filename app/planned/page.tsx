@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Loader2, Lock, Filter, Check } from "lucide-react";
 import { PlannedItemEditor } from "@/components/PlannedItemEditor";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
-import { formatCents } from "@/lib/money";
+import { formatCents, formatBalance } from "@/lib/money";
 import { avatarGlyph, displayName } from "@/lib/avatar";
 import type { Category, PlannedItem } from "@/lib/types";
 
@@ -47,6 +47,16 @@ export default function Planned() {
     () => (filter === "all" ? items : items.filter((it) => it.categoryId === filter)),
     [items, filter],
   );
+
+  const totals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const it of visibleItems) {
+      if (it.category?.kind === "income") income += it.amount;
+      else expense += it.amount;
+    }
+    return { income, expense, net: income - expense };
+  }, [visibleItems]);
 
   if (loading) {
     return (
@@ -134,6 +144,10 @@ export default function Planned() {
           </p>
         )}
 
+        {visibleItems.length > 0 && (
+          <PlanSummary income={totals.income} expense={totals.expense} net={totals.net} />
+        )}
+
         {categories
           .filter((cat) => visibleItems.some((it) => it.categoryId === cat.id))
           .map((cat) => {
@@ -209,6 +223,38 @@ export default function Planned() {
         />
       )}
     </main>
+  );
+}
+
+function PlanSummary({ income, expense, net }: { income: number; expense: number; net: number }) {
+  const max = Math.max(income, expense, 1);
+  const incomePct = (income / max) * 100;
+  const expensePct = (expense / max) * 100;
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border p-4" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+      <Bar label="Доходы" amount={income} pct={incomePct} color="#10b981" />
+      <Bar label="Расходы" amount={expense} pct={expensePct} color="#ef4444" />
+      <div className="mt-1 flex items-center justify-between border-t pt-3" style={{ borderColor: "var(--field-border)" }}>
+        <span className="text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>Остаток / мес</span>
+        <span className="text-base font-bold" style={{ color: net < 0 ? "#ef4444" : "#10b981" }}>
+          {formatBalance(net)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Bar({ label, amount, pct, color }: { label: string; amount: number; pct: number; color: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between">
+        <span className="text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>{label}</span>
+        <span className="text-sm font-semibold" style={{ color }}>{formatCents(amount)}</span>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full" style={{ background: "var(--bg)" }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+      </div>
+    </div>
   );
 }
 
