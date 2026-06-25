@@ -5,7 +5,7 @@ import { Loader2, Lock, CalendarClock } from "lucide-react";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance } from "@/lib/money";
 import { monthlyForecast, type MonthPoint } from "@/lib/forecast";
-import type { PlannedItem, Transaction, TransactionsResponse } from "@/lib/types";
+import type { PlannedItem, TransactionsResponse } from "@/lib/types";
 
 const HORIZONS = [
   { label: "1 год", months: 12 },
@@ -27,7 +27,6 @@ function yearWord(n: number): string {
 
 export default function Plan() {
   const [balance, setBalance] = useState(0);
-  const [txs, setTxs] = useState<Transaction[]>([]);
   const [items, setItems] = useState<PlannedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -46,7 +45,6 @@ export default function Plan() {
       if (txRes.ok) {
         const data: TransactionsResponse = await txRes.json();
         setBalance(data.balance);
-        setTxs(data.transactions);
       }
       if (itRes.ok) setItems(await itRes.json());
     } catch {
@@ -63,8 +61,8 @@ export default function Plan() {
   }, [load]);
 
   const series = useMemo(
-    () => monthlyForecast(items, txs, balance, new Date(), months),
-    [items, txs, balance, months],
+    () => monthlyForecast(items, balance, new Date(), months),
+    [items, balance, months],
   );
 
   // Group the month points by year.
