@@ -5,7 +5,6 @@ export type Kind = "expense" | "income";
 export type Category = {
   id: string;
   name: string;
-  color: string;
   kind: Kind;
 };
 

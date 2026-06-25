@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Check } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Sheet } from "@/components/Sheet";
 import { apiFetch, haptic } from "@/lib/client";
-import { COLORS } from "@/lib/icons";
 import type { Category, Kind } from "@/lib/types";
 
-// Category editor: name (emoji prefix becomes the glyph), kind, color. The
-// monthly budget is the sum of the category's planned items, managed in the
-// Planned tab — not here.
+// Category editor: name (emoji prefix becomes the glyph) and kind. The monthly
+// budget is the sum of the category's planned items, managed in the Planned
+// tab — not here.
 export function CategoryEditor({
   category,
   onClose,
@@ -21,7 +20,6 @@ export function CategoryEditor({
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [kind, setKind] = useState<Kind>(category?.kind ?? "expense");
-  const [color, setColor] = useState(category?.color ?? COLORS[0]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -32,7 +30,7 @@ export function CategoryEditor({
     setSaving(true);
     haptic();
 
-    const catBody = { name: name.trim(), kind, color };
+    const catBody = { name: name.trim(), kind };
     if (category?.id) {
       await apiFetch(`/api/categories/${category.id}`, {
         method: "PATCH",
@@ -86,21 +84,6 @@ export function CategoryEditor({
               }
             >
               {k === "expense" ? "Расход" : "Доход"}
-            </button>
-          ))}
-        </div>
-
-        {/* color picker */}
-        <div className="flex flex-wrap gap-2">
-          {COLORS.map((c) => (
-            <button
-              key={c}
-              onClick={() => setColor(c)}
-              className="flex h-8 w-8 items-center justify-center rounded-full transition active:scale-90"
-              style={{ background: c }}
-              aria-label={c}
-            >
-              {color === c && <Check size={15} className="text-white" />}
             </button>
           ))}
         </div>

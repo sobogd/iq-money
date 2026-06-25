@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Loader2, Lock } from "lucide-react";
+import { Plus, Loader2, Lock, Filter, Check } from "lucide-react";
 import { PlannedItemEditor } from "@/components/PlannedItemEditor";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatCents } from "@/lib/money";
 import { avatarGlyph, displayName } from "@/lib/avatar";
-import type { Category, Kind, PlannedItem } from "@/lib/types";
+import type { Category, PlannedItem } from "@/lib/types";
 
 export default function Planned() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -16,6 +16,7 @@ export default function Planned() {
   const [edit, setEdit] = useState<PlannedItem | null>(null);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<string>("all"); // categoryId | "all"
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -42,7 +43,6 @@ export default function Planned() {
     load();
   }, [load]);
 
-  // Apply the category filter (if any).
   const visibleItems = useMemo(
     () => (filter === "all" ? items : items.filter((it) => it.categoryId === filter)),
     [items, filter],
@@ -71,38 +71,62 @@ export default function Planned() {
     );
   }
 
-  const kinds: { label: string; kind: Kind }[] = [
-    { label: "Расходы", kind: "expense" },
-    { label: "Доходы", kind: "income" },
-  ];
+  const activeCat = filter === "all" ? null : categories.find((c) => c.id === filter);
 
   return (
     <main className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--bg)", color: "var(--text)" }}>
       {/* sticky header (styled like the tab bar) */}
       <header
-        className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-3"
+        className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b px-4 py-3"
         style={{ background: "var(--accent)", borderColor: "var(--border)" }}
       >
-        <h1 className="text-xl font-bold tracking-tight">Запланировано</h1>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="max-w-[55%] truncate rounded-xl border px-3 py-1.5 text-sm outline-none"
-          style={{ background: "var(--card)", borderColor: "var(--field-border)", color: "var(--text)" }}
-        >
-          <option value="all">Все категории</option>
-          {kinds.map((k) => {
-            const cats = categories.filter((c) => c.kind === k.kind);
-            if (cats.length === 0) return null;
-            return (
-              <optgroup key={k.kind} label={k.label}>
-                {cats.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+        <h1 className="truncate text-xl font-bold tracking-tight">Запланировано</h1>
+
+        {/* filter — icon button + dropdown */}
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setFilterOpen((o) => !o)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border transition active:scale-90"
+            style={{
+              borderColor: activeCat ? "var(--button)" : "var(--field-border)",
+              background: activeCat ? "var(--button)" : "var(--card)",
+              color: activeCat ? "#fff" : "var(--hint)",
+            }}
+            aria-label="Фильтр по категории"
+          >
+            <Filter size={18} />
+          </button>
+
+          {filterOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setFilterOpen(false)} aria-hidden />
+              <div
+                className="absolute right-0 top-full z-50 mt-2 max-h-[60vh] w-60 overflow-y-auto rounded-xl border p-1 shadow-xl"
+                style={{ background: "var(--card)", borderColor: "var(--field-border)" }}
+              >
+                <FilterRow
+                  label="Все категории"
+                  active={filter === "all"}
+                  onClick={() => {
+                    setFilter("all");
+                    setFilterOpen(false);
+                  }}
+                />
+                {categories.map((c) => (
+                  <FilterRow
+                    key={c.id}
+                    label={`${avatarGlyph(c.name)} ${displayName(c.name)}`}
+                    active={filter === c.id}
+                    onClick={() => {
+                      setFilter(c.id);
+                      setFilterOpen(false);
+                    }}
+                  />
                 ))}
-              </optgroup>
-            );
-          })}
-        </select>
+              </div>
+            </>
+          )}
+        </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pt-5 pb-6">
@@ -114,59 +138,53 @@ export default function Planned() {
           </p>
         )}
 
-        {kinds.map((sec) => {
-          const secItems = visibleItems.filter((it) => (it.category?.kind ?? "expense") === sec.kind);
-          if (secItems.length === 0) return null;
-          const secTotal = secItems.reduce((s, it) => s + it.amount, 0);
-          // Categories of this kind that have visible items, in category order.
-          const cats = categories.filter(
-            (c) => c.kind === sec.kind && secItems.some((it) => it.categoryId === c.id),
-          );
-          return (
-            <div key={sec.kind} className="flex flex-col gap-3">
-              <div className="flex items-baseline justify-between px-1">
-                <p className="text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>{sec.label}</p>
-                <p className="text-xs font-semibold" style={{ color: sec.kind === "income" ? "#10b981" : "var(--text)" }}>
-                  {formatCents(secTotal)} / мес
-                </p>
-              </div>
+        {categories
+          .filter((cat) => visibleItems.some((it) => it.categoryId === cat.id))
+          .map((cat) => {
+            const catItems = visibleItems
+              .filter((it) => it.categoryId === cat.id)
+              .sort((a, b) => a.dayOfMonth - b.dayOfMonth || a.name.localeCompare(b.name));
+            const catTotal = catItems.reduce((s, it) => s + it.amount, 0);
+            const isIncome = cat.kind === "income";
+            return (
+              <div key={cat.id} className="flex flex-col gap-2">
+                {/* category header — same style as a section label */}
+                <div className="flex items-baseline justify-between px-1">
+                  <p className="truncate text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
+                    {displayName(cat.name)}
+                  </p>
+                  <p className="shrink-0 text-xs font-semibold" style={{ color: isIncome ? "#10b981" : "var(--text)" }}>
+                    {formatCents(catTotal)} / мес
+                  </p>
+                </div>
 
-              {cats.map((cat) => {
-                const catItems = secItems
-                  .filter((it) => it.categoryId === cat.id)
-                  .sort((a, b) => a.dayOfMonth - b.dayOfMonth || a.name.localeCompare(b.name));
-                const catTotal = catItems.reduce((s, it) => s + it.amount, 0);
-                return (
-                  <div key={cat.id} className="flex flex-col gap-1.5">
-                    <div className="flex items-baseline justify-between px-1">
-                      <p className="truncate text-sm font-semibold">
-                        <span className="mr-1.5">{avatarGlyph(cat.name)}</span>
-                        {displayName(cat.name)}
+                {catItems.map((it) => (
+                  <button
+                    key={it.id}
+                    onClick={() => setEdit(it)}
+                    className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                  >
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                      style={{ background: "var(--bg)" }}
+                    >
+                      {avatarGlyph(cat.name)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{it.name}</p>
+                      <p className="truncate text-xs" style={{ color: "var(--hint)" }}>
+                        {displayName(cat.name)} · число {it.dayOfMonth}
                       </p>
-                      <p className="shrink-0 text-xs" style={{ color: "var(--hint)" }}>{formatCents(catTotal)}</p>
                     </div>
-                    {catItems.map((it) => (
-                      <button
-                        key={it.id}
-                        onClick={() => setEdit(it)}
-                        className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
-                        style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{it.name}</p>
-                          <p className="text-xs" style={{ color: "var(--hint)" }}>число {it.dayOfMonth}</p>
-                        </div>
-                        <span className="shrink-0 font-semibold" style={{ color: sec.kind === "income" ? "#10b981" : "var(--text)" }}>
-                          {formatCents(it.amount)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+                    <span className="shrink-0 font-semibold" style={{ color: isIncome ? "#10b981" : "var(--text)" }}>
+                      {formatCents(it.amount)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            );
+          })}
       </div>
 
       <button
@@ -200,5 +218,18 @@ export default function Planned() {
         />
       )}
     </main>
+  );
+}
+
+function FilterRow({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm transition active:scale-[0.98]"
+      style={active ? { background: "var(--button)", color: "#fff" } : { color: "var(--text)" }}
+    >
+      <span className="truncate">{label}</span>
+      {active && <Check size={15} className="shrink-0" />}
+    </button>
   );
 }

@@ -32,7 +32,6 @@ export async function POST(req: Request) {
     data: {
       name,
       kind,
-      color: String(body?.color || "#10b981"),
     },
   });
   return NextResponse.json(category, { status: 201 });

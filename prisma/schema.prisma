@@ -14,7 +14,6 @@ datasource db {
 model Category {
   id        String   @id @default(cuid())
   name      String
-  color     String   @default("#10b981")
   kind      String   @default("expense") // "expense" | "income"
   archived  Boolean  @default(false)
   createdAt DateTime @default(now())

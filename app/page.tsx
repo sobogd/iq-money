@@ -122,20 +122,25 @@ export default function Home() {
               </p>
               {g.items.map((t) => {
                 const cat = t.category;
-                const catLabel = cat
-                  ? `${avatarGlyph(cat.name)} ${displayName(cat.name)}`
-                  : t.kind === "income" ? "Доход" : "Расход";
+                const catName = cat ? displayName(cat.name) : t.kind === "income" ? "Доход" : "Расход";
+                const glyph = cat ? avatarGlyph(cat.name) : t.kind === "income" ? "+" : "−";
                 const note = t.note.trim();
                 return (
                   <button
                     key={t.id}
                     onClick={() => setEditTx(t)}
-                    className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+                    className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                      style={{ background: "var(--bg)" }}
+                    >
+                      {glyph}
+                    </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{note || catLabel}</p>
-                      {note && <p className="truncate text-xs" style={{ color: "var(--hint)" }}>{catLabel}</p>}
+                      <p className="truncate text-sm font-medium">{note || catName}</p>
+                      {note && <p className="truncate text-xs" style={{ color: "var(--hint)" }}>{catName}</p>}
                     </div>
                     <span className="shrink-0 font-semibold" style={{ color: t.kind === "income" ? "#10b981" : "var(--text)" }}>
                       {t.kind === "income" ? "+" : "−"}

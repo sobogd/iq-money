@@ -122,9 +122,8 @@ export function AddSheet({
                 title={c.name}
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-2xl transition active:scale-90"
                 style={{
-                  borderColor: active ? c.color : "var(--border)",
-                  background: active ? c.color + "22" : "var(--card)",
-                  color: active ? c.color : "var(--text)",
+                  borderColor: active ? "var(--button)" : "var(--field-border)",
+                  background: active ? "var(--button)" : "var(--card)",
                 }}
               >
                 {avatarGlyph(c.name)}
