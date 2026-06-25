@@ -15,6 +15,7 @@ export default function Planned() {
   const [forbidden, setForbidden] = useState(false);
   const [edit, setEdit] = useState<PlannedItem | null>(null);
   const [creating, setCreating] = useState(false);
+  const [filter, setFilter] = useState<string>("all"); // categoryId | "all"
 
   const load = useCallback(async () => {
     try {
@@ -41,15 +42,11 @@ export default function Planned() {
     load();
   }, [load]);
 
-  const totals = useMemo(() => {
-    let expense = 0;
-    let income = 0;
-    for (const it of items) {
-      if (it.category?.kind === "income") income += it.amount;
-      else expense += it.amount;
-    }
-    return { expense, income };
-  }, [items]);
+  // Apply the category filter (if any).
+  const visibleItems = useMemo(
+    () => (filter === "all" ? items : items.filter((it) => it.categoryId === filter)),
+    [items, filter],
+  );
 
   if (loading) {
     return (
@@ -74,54 +71,99 @@ export default function Planned() {
     );
   }
 
-  const sections: { label: string; kind: Kind; total: number }[] = [
-    { label: "Expense", kind: "expense", total: totals.expense },
-    { label: "Income", kind: "income", total: totals.income },
+  const kinds: { label: string; kind: Kind }[] = [
+    { label: "Расходы", kind: "expense" },
+    { label: "Доходы", kind: "income" },
   ];
 
   return (
-    <main className="flex flex-1 flex-col items-center overflow-y-auto px-4 pt-6 pb-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
-      <div className="flex w-full max-w-2xl flex-col gap-5">
-        <h1 className="text-xl font-bold tracking-tight">Planned</h1>
+    <main className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--bg)", color: "var(--text)" }}>
+      {/* sticky header (styled like the tab bar) */}
+      <header
+        className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-3"
+        style={{ background: "var(--accent)", borderColor: "var(--border)" }}
+      >
+        <h1 className="text-xl font-bold tracking-tight">Запланировано</h1>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="max-w-[55%] truncate rounded-xl border px-3 py-1.5 text-sm outline-none"
+          style={{ background: "var(--card)", borderColor: "var(--field-border)", color: "var(--text)" }}
+        >
+          <option value="all">Все категории</option>
+          {kinds.map((k) => {
+            const cats = categories.filter((c) => c.kind === k.kind);
+            if (cats.length === 0) return null;
+            return (
+              <optgroup key={k.kind} label={k.label}>
+                {cats.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </optgroup>
+            );
+          })}
+        </select>
+      </header>
 
-        {items.length === 0 && (
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pt-5 pb-6">
+        {visibleItems.length === 0 && (
           <p className="py-10 text-center text-sm" style={{ color: "var(--hint)" }}>
-            No planned items yet. Tap + to add recurring monthly expenses or income.
+            {items.length === 0
+              ? "Пока нет запланированных статей. Нажмите +, чтобы добавить регулярные расходы или доходы."
+              : "Нет статей в этой категории."}
           </p>
         )}
 
-        {sections.map((sec) => {
-          const list = items.filter((it) => (it.category?.kind ?? "expense") === sec.kind);
-          if (list.length === 0) return null;
+        {kinds.map((sec) => {
+          const secItems = visibleItems.filter((it) => (it.category?.kind ?? "expense") === sec.kind);
+          if (secItems.length === 0) return null;
+          const secTotal = secItems.reduce((s, it) => s + it.amount, 0);
+          // Categories of this kind that have visible items, in category order.
+          const cats = categories.filter(
+            (c) => c.kind === sec.kind && secItems.some((it) => it.categoryId === c.id),
+          );
           return (
-            <div key={sec.kind} className="flex flex-col gap-2">
+            <div key={sec.kind} className="flex flex-col gap-3">
               <div className="flex items-baseline justify-between px-1">
                 <p className="text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>{sec.label}</p>
                 <p className="text-xs font-semibold" style={{ color: sec.kind === "income" ? "#10b981" : "var(--text)" }}>
-                  {formatCents(sec.total)} / month
+                  {formatCents(secTotal)} / мес
                 </p>
               </div>
-              {list.map((it) => (
-                <button
-                  key={it.id}
-                  onClick={() => setEdit(it)}
-                  className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
-                  style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                >
-                  <span className="w-7 shrink-0 text-center text-xl">
-                    {it.category ? avatarGlyph(it.category.name) : "•"}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{it.name}</p>
-                    <p className="truncate text-xs" style={{ color: "var(--hint)" }}>
-                      {it.category ? displayName(it.category.name) : "—"} · day {it.dayOfMonth}
-                    </p>
+
+              {cats.map((cat) => {
+                const catItems = secItems
+                  .filter((it) => it.categoryId === cat.id)
+                  .sort((a, b) => a.dayOfMonth - b.dayOfMonth || a.name.localeCompare(b.name));
+                const catTotal = catItems.reduce((s, it) => s + it.amount, 0);
+                return (
+                  <div key={cat.id} className="flex flex-col gap-1.5">
+                    <div className="flex items-baseline justify-between px-1">
+                      <p className="truncate text-sm font-semibold">
+                        <span className="mr-1.5">{avatarGlyph(cat.name)}</span>
+                        {displayName(cat.name)}
+                      </p>
+                      <p className="shrink-0 text-xs" style={{ color: "var(--hint)" }}>{formatCents(catTotal)}</p>
+                    </div>
+                    {catItems.map((it) => (
+                      <button
+                        key={it.id}
+                        onClick={() => setEdit(it)}
+                        className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+                        style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{it.name}</p>
+                          <p className="text-xs" style={{ color: "var(--hint)" }}>число {it.dayOfMonth}</p>
+                        </div>
+                        <span className="shrink-0 font-semibold" style={{ color: sec.kind === "income" ? "#10b981" : "var(--text)" }}>
+                          {formatCents(it.amount)}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                  <span className="shrink-0 font-semibold" style={{ color: sec.kind === "income" ? "#10b981" : "var(--text)" }}>
-                    {formatCents(it.amount)}
-                  </span>
-                </button>
-              ))}
+                );
+              })}
             </div>
           );
         })}
@@ -131,7 +173,7 @@ export default function Planned() {
         onClick={() => setCreating(true)}
         className="fixed bottom-20 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-90"
         style={{ background: "var(--button)" }}
-        aria-label="New planned item"
+        aria-label="Новая статья"
       >
         <Plus size={26} />
       </button>

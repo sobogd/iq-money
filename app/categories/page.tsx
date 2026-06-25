@@ -71,14 +71,19 @@ export default function Categories() {
   }
 
   const sections: { label: string; kind: Kind }[] = [
-    { label: "Expense", kind: "expense" },
-    { label: "Income", kind: "income" },
+    { label: "Расходы", kind: "expense" },
+    { label: "Доходы", kind: "income" },
   ];
 
   return (
-    <main className="flex flex-1 flex-col items-center overflow-y-auto px-4 pt-6 pb-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
-      <div className="flex w-full max-w-2xl flex-col gap-5">
-        <h1 className="text-xl font-bold tracking-tight">Categories</h1>
+    <main className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--bg)", color: "var(--text)" }}>
+      <header
+        className="sticky top-0 z-10 border-b px-4 py-3"
+        style={{ background: "var(--accent)", borderColor: "var(--border)" }}
+      >
+        <h1 className="text-xl font-bold tracking-tight">Категории</h1>
+      </header>
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pt-5 pb-6">
 
         {sections.map((sec) => {
           const cats = categories.filter((c) => c.kind === sec.kind);
@@ -99,7 +104,7 @@ export default function Categories() {
                   >
                     <p className="truncate font-medium">{c.name}</p>
                     <p className="text-xs" style={{ color: "var(--hint)" }}>
-                      {budget > 0 ? `${formatCents(budget)} / month` : "No planned items"}
+                      {budget > 0 ? `${formatCents(budget)} / мес` : "Нет статей"}
                     </p>
                   </button>
                 );
@@ -113,7 +118,7 @@ export default function Categories() {
         onClick={() => setCreating(true)}
         className="fixed bottom-20 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-90"
         style={{ background: "var(--button)" }}
-        aria-label="New category"
+        aria-label="Новая категория"
       >
         <Plus size={26} />
       </button>

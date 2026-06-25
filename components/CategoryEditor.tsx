@@ -53,7 +53,7 @@ export function CategoryEditor({
 
   async function remove() {
     if (!category || deleting) return;
-    if (!confirm(`Delete category "${category.name}"?`)) return;
+    if (!confirm(`Удалить категорию «${category.name}»?`)) return;
     setDeleting(true);
     haptic();
     const res = await apiFetch(`/api/categories/${category.id}`, { method: "DELETE" });
@@ -62,11 +62,11 @@ export function CategoryEditor({
   }
 
   return (
-    <Sheet title={category ? "Edit category" : "New category"} onClose={onClose}>
+    <Sheet title={category ? "Изменить категорию" : "Новая категория"} onClose={onClose}>
       <div className="flex flex-col gap-4">
         <input
           autoFocus={!category}
-          placeholder="Name (start with an emoji, e.g. 🍔 Food)"
+          placeholder="Название (начните с emoji, напр. 🍔 Еда)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-xl border px-3 py-2.5 text-sm outline-none"
@@ -85,7 +85,7 @@ export function CategoryEditor({
                   : { color: "var(--hint)" }
               }
             >
-              {k === "expense" ? "Expense" : "Income"}
+              {k === "expense" ? "Расход" : "Доход"}
             </button>
           ))}
         </div>
@@ -111,7 +111,7 @@ export function CategoryEditor({
           className="flex items-center justify-center gap-2 rounded-xl py-3 text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
           style={{ background: "var(--button)" }}
         >
-          {saving ? <Loader2 size={18} className="animate-spin" /> : "Save"}
+          {saving ? <Loader2 size={18} className="animate-spin" /> : "Сохранить"}
         </button>
 
         {category && (
@@ -120,7 +120,7 @@ export function CategoryEditor({
             disabled={deleting}
             className="text-sm font-medium text-red-500 transition active:scale-95 disabled:opacity-40"
           >
-            {deleting ? "Deleting…" : "Delete category"}
+            {deleting ? "Удаление…" : "Удалить категорию"}
           </button>
         )}
       </div>

@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { Wallet, Repeat, CalendarClock, Tags } from "lucide-react";
 
 const TABS = [
-  { href: "/", label: "Ledger", Icon: Wallet },
-  { href: "/planned", label: "Planned", Icon: Repeat },
-  { href: "/plan", label: "Forecast", Icon: CalendarClock },
-  { href: "/categories", label: "Categories", Icon: Tags },
+  { href: "/", label: "Операции", Icon: Wallet },
+  { href: "/planned", label: "Планы", Icon: Repeat },
+  { href: "/plan", label: "Прогноз", Icon: CalendarClock },
+  { href: "/categories", label: "Категории", Icon: Tags },
 ];
 
 // Bottom navigation: real ledger, forecast, and category management.

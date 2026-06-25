@@ -54,7 +54,7 @@ export function PlannedItemEditor({
 
   async function remove() {
     if (!edit || deleting) return;
-    if (!confirm(`Delete "${edit.name}"?`)) return;
+    if (!confirm(`Удалить «${edit.name}»?`)) return;
     setDeleting(true);
     haptic();
     const res = await apiFetch(`/api/planned-items/${edit.id}`, { method: "DELETE" });
@@ -63,7 +63,7 @@ export function PlannedItemEditor({
   }
 
   return (
-    <Sheet title={edit ? "Edit planned item" : "New planned item"} onClose={onClose}>
+    <Sheet title={edit ? "Изменить статью" : "Новая статья"} onClose={onClose}>
       <div className="flex flex-col gap-5">
         {/* expense / income toggle */}
         <div className="grid grid-cols-2 gap-2 rounded-xl p-1" style={{ background: "var(--bg)" }}>
@@ -81,7 +81,7 @@ export function PlannedItemEditor({
                   : { color: "var(--hint)" }
               }
             >
-              {k === "expense" ? "Expense" : "Income"}
+              {k === "expense" ? "Расход" : "Доход"}
             </button>
           ))}
         </div>
@@ -111,7 +111,7 @@ export function PlannedItemEditor({
         {/* name */}
         <input
           autoFocus={!edit}
-          placeholder="Name (e.g. Rent, Utilities)"
+          placeholder="Название (напр. Аренда, Коммуналка)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded-xl border px-3 py-2.5 text-sm outline-none"
@@ -121,7 +121,7 @@ export function PlannedItemEditor({
         {/* amount + day */}
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1">
-            <span className="text-xs" style={{ color: "var(--hint)" }}>Amount / month</span>
+            <span className="text-xs" style={{ color: "var(--hint)" }}>Сумма / мес</span>
             <div
               className="flex items-center gap-1 rounded-xl border px-3 py-2.5"
               style={{ background: "var(--card)", borderColor: "var(--field-border)" }}
@@ -138,7 +138,7 @@ export function PlannedItemEditor({
           </label>
           <label className="flex w-28 flex-col gap-1">
             <span className="text-xs" style={{ color: "var(--hint)" }}>
-              {kind === "income" ? "Arrival day" : "Charge day"}
+              {kind === "income" ? "День прихода" : "День списания"}
             </span>
             <input
               inputMode="numeric"
@@ -156,7 +156,7 @@ export function PlannedItemEditor({
           className="flex items-center justify-center gap-2 rounded-xl py-3 text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
           style={{ background: "var(--button)" }}
         >
-          {saving ? <Loader2 size={18} className="animate-spin" /> : edit ? "Save" : "Add"}
+          {saving ? <Loader2 size={18} className="animate-spin" /> : edit ? "Сохранить" : "Добавить"}
         </button>
 
         {edit && (
@@ -165,7 +165,7 @@ export function PlannedItemEditor({
             disabled={deleting}
             className="text-sm font-medium text-red-500 transition active:scale-95 disabled:opacity-40"
           >
-            {deleting ? "Deleting…" : "Delete"}
+            {deleting ? "Удаление…" : "Удалить"}
           </button>
         )}
       </div>

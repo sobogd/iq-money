@@ -36,7 +36,7 @@ export function Sheet({
             onClick={onClose}
             className="rounded-full p-1 transition active:scale-90"
             style={{ color: "var(--hint)" }}
-            aria-label="Close"
+            aria-label="Закрыть"
           >
             <X size={20} />
           </button>

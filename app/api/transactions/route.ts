@@ -11,7 +11,8 @@ export async function GET(req: Request) {
 
   const [transactions, agg] = await Promise.all([
     prisma.transaction.findMany({
-      orderBy: { occurredAt: "desc" },
+      // Primary by date; within the same day, by insertion order (newest first).
+      orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
       include: { category: true },
       take: 1000,
     }),

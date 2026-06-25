@@ -36,7 +36,7 @@ export function AddSheet({
 
   async function remove() {
     if (!edit || deleting) return;
-    if (!confirm("Delete this transaction?")) return;
+    if (!confirm("Удалить операцию?")) return;
     setDeleting(true);
     haptic();
     const res = await apiFetch(`/api/transactions/${edit.id}`, { method: "DELETE" });
@@ -72,7 +72,7 @@ export function AddSheet({
   }
 
   return (
-    <Sheet title={edit ? "Edit" : "Add"} onClose={onClose}>
+    <Sheet title={edit ? "Изменить" : "Добавить"} onClose={onClose}>
       <div className="flex flex-col gap-5">
         {/* expense / income toggle */}
         <div className="grid grid-cols-2 gap-2 rounded-xl p-1" style={{ background: "var(--bg)" }}>
@@ -90,7 +90,7 @@ export function AddSheet({
                   : { color: "var(--hint)" }
               }
             >
-              {k === "expense" ? "Expense" : "Income"}
+              {k === "expense" ? "Расход" : "Доход"}
             </button>
           ))}
         </div>
@@ -135,7 +135,7 @@ export function AddSheet({
 
         {/* note + date */}
         <input
-          placeholder="Note (optional)"
+          placeholder="Комментарий (необязательно)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           className="rounded-xl border px-3 py-2.5 text-sm outline-none"
@@ -155,7 +155,7 @@ export function AddSheet({
           className="flex items-center justify-center gap-2 rounded-xl py-3 text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
           style={{ background: "var(--button)" }}
         >
-          {saving ? <Loader2 size={18} className="animate-spin" /> : edit ? "Save" : "Add"}
+          {saving ? <Loader2 size={18} className="animate-spin" /> : edit ? "Сохранить" : "Добавить"}
         </button>
 
         {edit && (
@@ -164,7 +164,7 @@ export function AddSheet({
             disabled={deleting}
             className="text-sm font-medium text-red-500 transition active:scale-95 disabled:opacity-40"
           >
-            {deleting ? "Deleting…" : "Delete"}
+            {deleting ? "Удаление…" : "Удалить"}
           </button>
         )}
       </div>

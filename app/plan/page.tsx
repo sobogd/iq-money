@@ -8,13 +8,22 @@ import { monthlyForecast, type MonthPoint } from "@/lib/forecast";
 import type { PlannedItem, Transaction, TransactionsResponse } from "@/lib/types";
 
 const HORIZONS = [
-  { label: "1 year", months: 12 },
-  { label: "3 years", months: 36 },
-  { label: "5 years", months: 60 },
-  { label: "10 years", months: 120 },
+  { label: "1 год", months: 12 },
+  { label: "3 года", months: 36 },
+  { label: "5 лет", months: 60 },
+  { label: "10 лет", months: 120 },
 ];
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+
+// Russian plural for "year" after a number.
+function yearWord(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "год";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "года";
+  return "лет";
+}
 
 export default function Plan() {
   const [balance, setBalance] = useState(0);
@@ -95,20 +104,23 @@ export default function Plan() {
   const final = series[series.length - 1];
 
   return (
-    <main className="flex flex-1 flex-col items-center overflow-y-auto px-4 pt-6 pb-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
-      <div className="flex w-full max-w-2xl flex-col gap-5">
-        <header className="flex items-center gap-2">
-          <CalendarClock size={22} className="text-emerald-500" />
-          <h1 className="text-xl font-bold tracking-tight">Plan</h1>
-        </header>
+    <main className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--bg)", color: "var(--text)" }}>
+      <header
+        className="sticky top-0 z-10 flex items-center gap-2 border-b px-4 py-3"
+        style={{ background: "var(--accent)", borderColor: "var(--border)" }}
+      >
+        <CalendarClock size={22} className="text-emerald-500" />
+        <h1 className="text-xl font-bold tracking-tight">Прогноз</h1>
+      </header>
 
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pt-5 pb-6">
         {/* now + final projection */}
         <div className="rounded-2xl border p-4" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>Now</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>Сейчас</p>
           <p className="text-2xl font-bold">{formatBalance(balance)}</p>
           {final && (
             <p className="mt-2 text-xs" style={{ color: "var(--hint)" }}>
-              In {months / 12 >= 1 ? `${months / 12} yr` : `${months} mo`} →{" "}
+              Через {months / 12 >= 1 ? `${months / 12} ${yearWord(months / 12)}` : `${months} мес`} →{" "}
               <span className="font-semibold" style={{ color: final.endBalance < 0 ? "#ef4444" : "var(--text)" }}>
                 {formatBalance(final.endBalance)}
               </span>
@@ -136,7 +148,7 @@ export default function Plan() {
 
         {items.length === 0 ? (
           <p className="py-6 text-center text-sm" style={{ color: "var(--hint)" }}>
-            No planned items yet. Add recurring monthly items in the Planned tab.
+            Пока нет запланированных статей. Добавьте регулярные статьи во вкладке «Запланировано».
           </p>
         ) : (
           byYear.map((g) => {

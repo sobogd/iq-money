@@ -14,9 +14,9 @@ function dayLabel(iso: string): string {
   const y = new Date();
   y.setDate(today.getDate() - 1);
   const same = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-  if (same(d, today)) return "Today";
-  if (same(d, y)) return "Yesterday";
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  if (same(d, today)) return "Сегодня";
+  if (same(d, y)) return "Вчера";
+  return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function groupByDay(txs: Transaction[]): { label: string; items: Transaction[] }[] {
@@ -97,20 +97,22 @@ export default function Home() {
   const groups = groupByDay(txs);
 
   return (
-    <main className="flex flex-1 flex-col items-center overflow-y-auto px-4 pt-6 pb-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
-      <div className="flex w-full max-w-2xl flex-col gap-5">
-        <header>
-          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>
-            Balance
-          </p>
-          <p className="mt-1 text-4xl font-bold tracking-tight" style={{ color: balance < 0 ? "#ef4444" : "var(--text)" }}>
-            {formatBalance(balance)}
-          </p>
-        </header>
+    <main className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--bg)", color: "var(--text)" }}>
+      {/* sticky header (styled like the tab bar) */}
+      <header
+        className="sticky top-0 z-10 border-b px-4 py-3"
+        style={{ background: "var(--accent)", borderColor: "var(--border)" }}
+      >
+        <p className="text-xs uppercase tracking-wide" style={{ color: "var(--hint)" }}>Баланс</p>
+        <p className="mt-0.5 text-3xl font-bold tracking-tight" style={{ color: balance < 0 ? "#ef4444" : "var(--text)" }}>
+          {formatBalance(balance)}
+        </p>
+      </header>
 
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pt-5 pb-6">
         {txs.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center" style={{ color: "var(--hint)" }}>
-            <p className="text-sm">No transactions yet. Tap + to add one.</p>
+            <p className="text-sm">Пока нет операций. Нажмите +, чтобы добавить.</p>
           </div>
         ) : (
           groups.map((g) => (
@@ -119,19 +121,22 @@ export default function Home() {
                 {g.label}
               </p>
               {g.items.map((t) => {
-                const glyph = t.category ? avatarGlyph(t.category.name) : t.kind === "income" ? "+" : "−";
-                const label = (t.note.trim() || (t.category ? displayName(t.category.name) : t.kind === "income" ? "Income" : "Expense")).toUpperCase();
+                const cat = t.category;
+                const catLabel = cat
+                  ? `${avatarGlyph(cat.name)} ${displayName(cat.name)}`
+                  : t.kind === "income" ? "Доход" : "Расход";
+                const note = t.note.trim();
                 return (
                   <button
                     key={t.id}
                     onClick={() => setEditTx(t)}
-                    className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.99]"
+                    className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
-                    <p className="min-w-0 flex-1 truncate text-sm font-medium">
-                      <span className="mr-1.5">{glyph}</span>
-                      {label}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{note || catLabel}</p>
+                      {note && <p className="truncate text-xs" style={{ color: "var(--hint)" }}>{catLabel}</p>}
+                    </div>
                     <span className="shrink-0 font-semibold" style={{ color: t.kind === "income" ? "#10b981" : "var(--text)" }}>
                       {t.kind === "income" ? "+" : "−"}
                       {formatCents(t.amount)}
@@ -149,7 +154,7 @@ export default function Home() {
         onClick={() => setShowAdd(true)}
         className="fixed bottom-20 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-90"
         style={{ background: "var(--button)" }}
-        aria-label="Add"
+        aria-label="Добавить"
       >
         <Plus size={26} />
       </button>
