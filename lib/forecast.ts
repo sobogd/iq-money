@@ -1,12 +1,12 @@
 import type { PlannedItem, Transaction } from "@/lib/types";
 
 // Month-by-month forecast. Each month layers the planned items (summed per
-// category) on top of the running balance:
-//  - expense: current month → Σitems − already-spent-this-month (min 0, by
-//             category since transactions aren't tied to a specific item);
-//             future → full Σitems.
-//  - income:  per item — current month → counted only if today is before the
-//             item's day (else it's already in the balance); future → full.
+// category) on top of the running balance.
+//  - future months: add full planned income, subtract full planned expense.
+//  - current month: the balance already reflects whatever actually happened
+//    this month, so we only "top up" to the plan — for BOTH income and expense
+//    symmetrically: remaining = max(0, plan − actual-this-month-by-category).
+//    (`dayOfMonth` is informational; it does not affect the math.)
 
 export type MonthPoint = {
   year: number;
@@ -50,22 +50,17 @@ export function monthlyForecast(
     let net = 0;
 
     for (const [categoryId, g] of cats) {
-      if (g.kind === "income") {
-        for (const it of g.items) {
-          if (isCurrent && now.getDate() >= it.dayOfMonth) continue; // already arrived
-          net += it.amount;
-        }
-      } else {
-        const planned = g.items.reduce((s, it) => s + it.amount, 0);
-        let rem = planned;
-        if (isCurrent) {
-          const spent = txs
-            .filter((t) => t.categoryId === categoryId && sameMonth(new Date(t.occurredAt), y, m))
-            .reduce((s, t) => s + t.amount, 0);
-          rem = Math.max(0, planned - spent);
-        }
-        net -= rem;
+      const planned = g.items.reduce((s, it) => s + it.amount, 0);
+      let rem = planned;
+      if (isCurrent) {
+        // What already happened this month for this category is in the balance;
+        // only the remainder up to the plan still affects the projection.
+        const actual = txs
+          .filter((t) => t.categoryId === categoryId && sameMonth(new Date(t.occurredAt), y, m))
+          .reduce((s, t) => s + t.amount, 0);
+        rem = Math.max(0, planned - actual);
       }
+      net += g.kind === "income" ? rem : -rem;
     }
 
     running += net;
