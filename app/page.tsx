@@ -5,6 +5,7 @@ import { Plus, Loader2, Lock } from "lucide-react";
 import { AddSheet } from "@/components/AddSheet";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance, formatCents } from "@/lib/money";
+import { avatarGlyph, displayName } from "@/lib/avatar";
 import type { Category, Transaction, TransactionsResponse } from "@/lib/types";
 
 function dayLabel(iso: string): string {
@@ -117,23 +118,27 @@ export default function Home() {
               <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
                 {g.label}
               </p>
-              {g.items.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setEditTx(t)}
-                  className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.99]"
-                  style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{t.category?.name ?? (t.kind === "income" ? "Income" : "Expense")}</p>
-                    {t.note && <p className="truncate text-xs" style={{ color: "var(--hint)" }}>{t.note}</p>}
-                  </div>
-                  <span className="shrink-0 font-semibold" style={{ color: t.kind === "income" ? "#10b981" : "var(--text)" }}>
-                    {t.kind === "income" ? "+" : "−"}
-                    {formatCents(t.amount)}
-                  </span>
-                </button>
-              ))}
+              {g.items.map((t) => {
+                const glyph = t.category ? avatarGlyph(t.category.name) : t.kind === "income" ? "+" : "−";
+                const label = (t.note.trim() || (t.category ? displayName(t.category.name) : t.kind === "income" ? "Income" : "Expense")).toUpperCase();
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setEditTx(t)}
+                    className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.99]"
+                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                  >
+                    <p className="min-w-0 flex-1 truncate font-medium">
+                      <span className="mr-1.5">{glyph}</span>
+                      {label}
+                    </p>
+                    <span className="shrink-0 font-semibold" style={{ color: t.kind === "income" ? "#10b981" : "var(--text)" }}>
+                      {t.kind === "income" ? "+" : "−"}
+                      {formatCents(t.amount)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ))
         )}
