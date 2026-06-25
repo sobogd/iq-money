@@ -10,7 +10,8 @@ export async function GET(req: Request) {
   if ("res" in g) return g.res;
 
   const items = await prisma.plannedItem.findMany({
-    where: { active: true },
+    // Exclude items whose category has been archived (soft-deleted).
+    where: { active: true, category: { archived: false } },
     include: { category: true },
     orderBy: [{ createdAt: "asc" }],
   });

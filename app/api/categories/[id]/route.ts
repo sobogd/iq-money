@@ -28,6 +28,11 @@ export async function DELETE(req: Request, { params }: Ctx) {
   if ("res" in g) return g.res;
   const { id } = await params;
 
-  await prisma.category.update({ where: { id }, data: { archived: true } });
+  // Archive the category and deactivate its planned items so they stop
+  // counting toward totals/forecast.
+  await prisma.$transaction([
+    prisma.category.update({ where: { id }, data: { archived: true } }),
+    prisma.plannedItem.updateMany({ where: { categoryId: id }, data: { active: false } }),
+  ]);
   return NextResponse.json({ ok: true });
 }
