@@ -6,6 +6,7 @@ import { PlannedItemEditor } from "@/components/PlannedItemEditor";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatCents, formatBalance } from "@/lib/money";
 import { avatarGlyph, displayName } from "@/lib/avatar";
+import { itemSumByCategory, effectiveAmount } from "@/lib/budget";
 import type { Category, PlannedItem } from "@/lib/types";
 
 export default function Planned() {
@@ -48,15 +49,21 @@ export default function Planned() {
     [items, filter],
   );
 
+  const itemSums = useMemo(() => itemSumByCategory(items), [items]);
+
+  // Totals use each category's effective plan (max of its amount and Σ items),
+  // matching the forecast. Respects the active category filter.
   const totals = useMemo(() => {
+    const cats = filter === "all" ? categories : categories.filter((c) => c.id === filter);
     let income = 0;
     let expense = 0;
-    for (const it of visibleItems) {
-      if (it.category?.kind === "income") income += it.amount;
-      else expense += it.amount;
+    for (const c of cats) {
+      const e = effectiveAmount(c, itemSums.get(c.id) ?? 0);
+      if (c.kind === "income") income += e;
+      else expense += e;
     }
     return { income, expense, net: income - expense };
-  }, [visibleItems]);
+  }, [categories, itemSums, filter]);
 
   if (loading) {
     return (
@@ -154,7 +161,7 @@ export default function Planned() {
             const catItems = visibleItems
               .filter((it) => it.categoryId === cat.id)
               .sort((a, b) => a.dayOfMonth - b.dayOfMonth || a.name.localeCompare(b.name));
-            const catTotal = catItems.reduce((s, it) => s + it.amount, 0);
+            const catTotal = effectiveAmount(cat, itemSums.get(cat.id) ?? 0);
             const isIncome = cat.kind === "income";
             return (
               <div key={cat.id} className="flex flex-col gap-2">

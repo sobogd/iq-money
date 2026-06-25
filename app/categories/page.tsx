@@ -5,6 +5,7 @@ import { Plus, Loader2, Lock } from "lucide-react";
 import { CategoryEditor } from "@/components/CategoryEditor";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatCents } from "@/lib/money";
+import { itemSumByCategory, effectiveAmount } from "@/lib/budget";
 import type { Category, Kind, PlannedItem } from "@/lib/types";
 
 export default function Categories() {
@@ -40,12 +41,8 @@ export default function Categories() {
     load();
   }, [load]);
 
-  // Category budget = sum of its planned items.
-  const budgetByCat = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const it of items) m.set(it.categoryId, (m.get(it.categoryId) ?? 0) + it.amount);
-    return m;
-  }, [items]);
+  // Sum of planned items per category (effective budget = max(amount, this)).
+  const itemSums = useMemo(() => itemSumByCategory(items), [items]);
 
   if (loading) {
     return (
@@ -94,7 +91,7 @@ export default function Categories() {
                 {sec.label}
               </p>
               {cats.map((c) => {
-                const budget = budgetByCat.get(c.id) ?? 0;
+                const budget = effectiveAmount(c, itemSums.get(c.id) ?? 0);
                 return (
                   <button
                     key={c.id}

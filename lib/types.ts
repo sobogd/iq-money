@@ -6,6 +6,7 @@ export type Category = {
   id: string;
   name: string;
   kind: Kind;
+  amount: number; // category-level monthly plan (cents); effective = max(amount, Σ items)
 };
 
 export type Transaction = {

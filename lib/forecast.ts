@@ -1,11 +1,9 @@
-import type { PlannedItem } from "@/lib/types";
+import type { Category, PlannedItem } from "@/lib/types";
+import { itemSumByCategory, effectiveAmount } from "@/lib/budget";
 
-// Month-by-month forecast layered on top of the running balance.
-//  - future months: add every planned income, subtract every planned expense.
-//  - current month: a planned item whose day-of-month has already passed is
-//    treated as paid/received (assumed reflected in the balance) and skipped;
-//    items still upcoming this month are applied. The balance carries reality;
-//    the forecast only adds what is still pending for the rest of the month.
+// Month-by-month forecast layered on top of the running balance. Each category
+// contributes its effective monthly plan — max(category amount, Σ items) — as
+// income (+) or expense (−), applied every month including the current one.
 
 export type MonthPoint = {
   year: number;
@@ -15,29 +13,29 @@ export type MonthPoint = {
 };
 
 export function monthlyForecast(
+  categories: Category[],
   items: PlannedItem[],
   currentBalance: number,
   now: Date,
   monthsAhead: number,
 ): MonthPoint[] {
+  const sums = itemSumByCategory(items);
+
+  // Signed monthly net from all categories (income positive, expense negative).
+  let monthlyNet = 0;
+  for (const c of categories) {
+    const e = effectiveAmount(c, sums.get(c.id) ?? 0);
+    if (e <= 0) continue;
+    monthlyNet += c.kind === "income" ? e : -e;
+  }
+
   const out: MonthPoint[] = [];
   let running = currentBalance;
-  const today = now.getDate();
-
   for (let i = 0; i <= monthsAhead; i++) {
     const y = now.getFullYear() + Math.floor((now.getMonth() + i) / 12);
     const m = (now.getMonth() + i) % 12;
-    const isCurrent = i === 0;
-    let net = 0;
-
-    for (const it of items) {
-      // Current month: a payment whose day already passed counts as done.
-      if (isCurrent && today > it.dayOfMonth) continue;
-      net += it.category?.kind === "income" ? it.amount : -it.amount;
-    }
-
-    running += net;
-    out.push({ year: y, monthIdx: m, net, endBalance: running });
+    running += monthlyNet;
+    out.push({ year: y, monthIdx: m, net: monthlyNet, endBalance: running });
   }
 
   return out;

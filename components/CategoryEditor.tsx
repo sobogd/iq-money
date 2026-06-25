@@ -4,11 +4,11 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Sheet } from "@/components/Sheet";
 import { apiFetch, haptic } from "@/lib/client";
+import { parseAmount, CURRENCY_SYMBOL } from "@/lib/money";
 import type { Category, Kind } from "@/lib/types";
 
-// Category editor: name (emoji prefix becomes the glyph) and kind. The monthly
-// budget is the sum of the category's planned items, managed in the Planned
-// tab — not here.
+// Category editor: name (emoji prefix becomes the glyph), kind, and an optional
+// category-level monthly plan. The effective plan is max(this amount, Σ items).
 export function CategoryEditor({
   category,
   onClose,
@@ -20,6 +20,7 @@ export function CategoryEditor({
 }) {
   const [name, setName] = useState(category?.name ?? "");
   const [kind, setKind] = useState<Kind>(category?.kind ?? "expense");
+  const [amount, setAmount] = useState(category?.amount ? (category.amount / 100).toString() : "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -30,7 +31,7 @@ export function CategoryEditor({
     setSaving(true);
     haptic();
 
-    const catBody = { name: name.trim(), kind };
+    const catBody = { name: name.trim(), kind, amount: parseAmount(amount) ?? 0 };
     if (category?.id) {
       await apiFetch(`/api/categories/${category.id}`, {
         method: "PATCH",
@@ -87,6 +88,24 @@ export function CategoryEditor({
             </button>
           ))}
         </div>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-xs" style={{ color: "var(--hint)" }}>План категории / мес (необязательно)</span>
+          <div className="flex items-center gap-1 rounded-xl border px-3 py-2.5" style={{ background: "var(--card)", borderColor: "var(--field-border)" }}>
+            <span style={{ color: "var(--hint)" }}>{CURRENCY_SYMBOL}</span>
+            <input
+              inputMode="decimal"
+              placeholder="0"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-transparent text-sm outline-none"
+              style={{ color: "var(--text)" }}
+            />
+          </div>
+          <span className="text-[11px]" style={{ color: "var(--hint)" }}>
+            Учитывается большее из этой суммы и суммы статей категории.
+          </span>
+        </label>
 
         <button
           onClick={save}

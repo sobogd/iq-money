@@ -16,6 +16,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const data: Record<string, unknown> = {};
   if (typeof body?.name === "string" && body.name.trim()) data.name = body.name.trim();
   if (body?.kind === "income" || body?.kind === "expense") data.kind = body.kind;
+  if (body?.amount !== undefined) {
+    const amount = Number(body.amount);
+    data.amount = Number.isInteger(amount) && amount > 0 ? amount : 0;
+  }
 
   const category = await prisma.category.update({ where: { id }, data });
   return NextResponse.json(category);

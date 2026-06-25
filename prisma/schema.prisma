@@ -15,6 +15,7 @@ model Category {
   id        String   @id @default(cuid())
   name      String
   kind      String   @default("expense") // "expense" | "income"
+  amount    Int      @default(0) // category-level monthly plan (cents); effective = max(amount, Σ items)
   archived  Boolean  @default(false)
   createdAt DateTime @default(now())
 

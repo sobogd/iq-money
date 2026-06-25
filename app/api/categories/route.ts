@@ -28,10 +28,14 @@ export async function POST(req: Request) {
   const kind = body?.kind === "income" ? "income" : "expense";
   if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
 
+  const rawAmount = Number(body?.amount);
+  const amount = Number.isInteger(rawAmount) && rawAmount > 0 ? rawAmount : 0;
+
   const category = await prisma.category.create({
     data: {
       name,
       kind,
+      amount,
     },
   });
   return NextResponse.json(category, { status: 201 });

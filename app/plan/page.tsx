@@ -5,7 +5,7 @@ import { Loader2, Lock, CalendarClock } from "lucide-react";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance } from "@/lib/money";
 import { monthlyForecast, type MonthPoint } from "@/lib/forecast";
-import type { PlannedItem, TransactionsResponse } from "@/lib/types";
+import type { Category, PlannedItem, TransactionsResponse } from "@/lib/types";
 
 const HORIZONS = [
   { label: "1 год", months: 12 },
@@ -27,6 +27,7 @@ function yearWord(n: number): string {
 
 export default function Plan() {
   const [balance, setBalance] = useState(0);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<PlannedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
@@ -34,8 +35,9 @@ export default function Plan() {
 
   const load = useCallback(async () => {
     try {
-      const [txRes, itRes] = await Promise.all([
+      const [txRes, catRes, itRes] = await Promise.all([
         apiFetch("/api/transactions"),
+        apiFetch("/api/categories"),
         apiFetch("/api/planned-items"),
       ]);
       if (txRes.status === 403) {
@@ -46,6 +48,7 @@ export default function Plan() {
         const data: TransactionsResponse = await txRes.json();
         setBalance(data.balance);
       }
+      if (catRes.ok) setCategories(await catRes.json());
       if (itRes.ok) setItems(await itRes.json());
     } catch {
       /* ignore */
@@ -61,9 +64,11 @@ export default function Plan() {
   }, [load]);
 
   const series = useMemo(
-    () => monthlyForecast(items, balance, new Date(), months),
-    [items, balance, months],
+    () => monthlyForecast(categories, items, balance, new Date(), months),
+    [categories, items, balance, months],
   );
+
+  const hasPlan = series.length > 0 && series[0].net !== 0;
 
   // Group the month points by year.
   const byYear = useMemo(() => {
@@ -144,9 +149,9 @@ export default function Plan() {
           ))}
         </div>
 
-        {items.length === 0 ? (
+        {!hasPlan ? (
           <p className="py-6 text-center text-sm" style={{ color: "var(--hint)" }}>
-            Пока нет запланированных статей. Добавьте регулярные статьи во вкладке «Запланировано».
+            Пока нет планов. Задайте план категории или добавьте статьи во вкладке «Запланировано».
           </p>
         ) : (
           byYear.map((g) => {
