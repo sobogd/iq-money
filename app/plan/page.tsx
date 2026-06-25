@@ -5,7 +5,7 @@ import { Loader2, Lock, CalendarClock } from "lucide-react";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatBalance } from "@/lib/money";
 import { monthlyForecast, type MonthPoint } from "@/lib/forecast";
-import type { CategoryPlan, Transaction, TransactionsResponse } from "@/lib/types";
+import type { PlannedItem, Transaction, TransactionsResponse } from "@/lib/types";
 
 const HORIZONS = [
   { label: "1 year", months: 12 },
@@ -19,16 +19,16 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 export default function Plan() {
   const [balance, setBalance] = useState(0);
   const [txs, setTxs] = useState<Transaction[]>([]);
-  const [plans, setPlans] = useState<CategoryPlan[]>([]);
+  const [items, setItems] = useState<PlannedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [months, setMonths] = useState(60);
 
   const load = useCallback(async () => {
     try {
-      const [txRes, plRes] = await Promise.all([
+      const [txRes, itRes] = await Promise.all([
         apiFetch("/api/transactions"),
-        apiFetch("/api/category-plans"),
+        apiFetch("/api/planned-items"),
       ]);
       if (txRes.status === 403) {
         setForbidden(true);
@@ -39,7 +39,7 @@ export default function Plan() {
         setBalance(data.balance);
         setTxs(data.transactions);
       }
-      if (plRes.ok) setPlans(await plRes.json());
+      if (itRes.ok) setItems(await itRes.json());
     } catch {
       /* ignore */
     } finally {
@@ -54,8 +54,8 @@ export default function Plan() {
   }, [load]);
 
   const series = useMemo(
-    () => monthlyForecast(plans, txs, balance, new Date(), months),
-    [plans, txs, balance, months],
+    () => monthlyForecast(items, txs, balance, new Date(), months),
+    [items, txs, balance, months],
   );
 
   // Group the month points by year.
@@ -134,9 +134,9 @@ export default function Plan() {
           ))}
         </div>
 
-        {plans.length === 0 ? (
+        {items.length === 0 ? (
           <p className="py-6 text-center text-sm" style={{ color: "var(--hint)" }}>
-            No category plans yet. Set monthly plans in the Categories tab.
+            No planned items yet. Add recurring monthly items in the Planned tab.
           </p>
         ) : (
           byYear.map((g) => {

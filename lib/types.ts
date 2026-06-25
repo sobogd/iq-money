@@ -25,11 +25,13 @@ export type TransactionsResponse = {
   transactions: Transaction[];
 };
 
-// Monthly planned sum for one category.
-export type CategoryPlan = {
+// A named recurring monthly line under a category. The category's budget is the
+// sum of its planned items.
+export type PlannedItem = {
   id: string;
   categoryId: string;
+  name: string;
   amount: number; // planned monthly euro cents, positive
-  dayOfMonth: number; // income arrival day (1..31); ignored for expense
+  dayOfMonth: number; // approx charge/arrival day (1..31)
   category: Category | null;
 };

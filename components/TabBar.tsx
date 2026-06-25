@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wallet, CalendarClock, Tags } from "lucide-react";
+import { Wallet, Repeat, CalendarClock, Tags } from "lucide-react";
 
 const TABS = [
   { href: "/", label: "Ledger", Icon: Wallet },
-  { href: "/plan", label: "Plan", Icon: CalendarClock },
+  { href: "/planned", label: "Planned", Icon: Repeat },
+  { href: "/plan", label: "Forecast", Icon: CalendarClock },
   { href: "/categories", label: "Categories", Icon: Tags },
 ];
 

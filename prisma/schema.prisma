@@ -20,28 +20,30 @@ model Category {
   createdAt DateTime @default(now())
 
   transactions Transaction[]
-  plan         CategoryPlan?
+  plannedItems PlannedItem[]
 
   @@map("categories")
 }
 
-// Monthly planned sum for a category (one per category). `amount` is the
-// expected monthly total, matched against real spending by category over the
-// calendar month. `dayOfMonth` only matters for income: before that day the
-// current month's income is still projected; on/after it the real income (in
-// the balance) is used instead. Expenses ignore the day.
-model CategoryPlan {
+// A named recurring monthly line under a category (e.g. "Rent", "Utilities").
+// A category's monthly plan/budget is the sum of its planned items. `dayOfMonth`
+// is the approximate charge (expense) / arrival (income) day. For income, before
+// that day the current month's amount is still projected; on/after it the real
+// income (already in the balance) is used. Expense day is informational.
+model PlannedItem {
   id         String   @id @default(cuid())
-  categoryId String   @unique
+  categoryId String
+  name       String
   amount     Int // planned monthly minor units (euro cents), positive
-  dayOfMonth Int      @default(1) // income arrival day (1..31)
+  dayOfMonth Int      @default(1) // 1..31
   active     Boolean  @default(true)
   createdBy  String   @default("")
   createdAt  DateTime @default(now())
 
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  @@map("category_plans")
+  @@index([categoryId])
+  @@map("planned_items")
 }
 
 model Transaction {

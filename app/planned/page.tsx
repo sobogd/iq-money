@@ -2,17 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Loader2, Lock } from "lucide-react";
-import { CategoryEditor } from "@/components/CategoryEditor";
+import { PlannedItemEditor } from "@/components/PlannedItemEditor";
 import { apiFetch, initTelegram, telegramUserId } from "@/lib/client";
 import { formatCents } from "@/lib/money";
+import { avatarGlyph, displayName } from "@/lib/avatar";
 import type { Category, Kind, PlannedItem } from "@/lib/types";
 
-export default function Categories() {
+export default function Planned() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<PlannedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
-  const [edit, setEdit] = useState<Category | null>(null);
+  const [edit, setEdit] = useState<PlannedItem | null>(null);
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
@@ -40,11 +41,14 @@ export default function Categories() {
     load();
   }, [load]);
 
-  // Category budget = sum of its planned items.
-  const budgetByCat = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const it of items) m.set(it.categoryId, (m.get(it.categoryId) ?? 0) + it.amount);
-    return m;
+  const totals = useMemo(() => {
+    let expense = 0;
+    let income = 0;
+    for (const it of items) {
+      if (it.category?.kind === "income") income += it.amount;
+      else expense += it.amount;
+    }
+    return { expense, income };
   }, [items]);
 
   if (loading) {
@@ -70,40 +74,54 @@ export default function Categories() {
     );
   }
 
-  const sections: { label: string; kind: Kind }[] = [
-    { label: "Expense", kind: "expense" },
-    { label: "Income", kind: "income" },
+  const sections: { label: string; kind: Kind; total: number }[] = [
+    { label: "Expense", kind: "expense", total: totals.expense },
+    { label: "Income", kind: "income", total: totals.income },
   ];
 
   return (
     <main className="flex flex-1 flex-col items-center overflow-y-auto px-4 pt-6 pb-6" style={{ background: "var(--bg)", color: "var(--text)" }}>
       <div className="flex w-full max-w-2xl flex-col gap-5">
-        <h1 className="text-xl font-bold tracking-tight">Categories</h1>
+        <h1 className="text-xl font-bold tracking-tight">Planned</h1>
+
+        {items.length === 0 && (
+          <p className="py-10 text-center text-sm" style={{ color: "var(--hint)" }}>
+            No planned items yet. Tap + to add recurring monthly expenses or income.
+          </p>
+        )}
 
         {sections.map((sec) => {
-          const cats = categories.filter((c) => c.kind === sec.kind);
-          if (cats.length === 0) return null;
+          const list = items.filter((it) => (it.category?.kind ?? "expense") === sec.kind);
+          if (list.length === 0) return null;
           return (
             <div key={sec.kind} className="flex flex-col gap-2">
-              <p className="px-1 text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>
-                {sec.label}
-              </p>
-              {cats.map((c) => {
-                const budget = budgetByCat.get(c.id) ?? 0;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setEdit(c)}
-                    className="flex flex-col gap-0.5 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
-                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                  >
-                    <p className="truncate font-medium">{c.name}</p>
-                    <p className="text-xs" style={{ color: "var(--hint)" }}>
-                      {budget > 0 ? `${formatCents(budget)} / month` : "No planned items"}
+              <div className="flex items-baseline justify-between px-1">
+                <p className="text-xs font-semibold uppercase" style={{ color: "var(--hint)" }}>{sec.label}</p>
+                <p className="text-xs font-semibold" style={{ color: sec.kind === "income" ? "#10b981" : "var(--text)" }}>
+                  {formatCents(sec.total)} / month
+                </p>
+              </div>
+              {list.map((it) => (
+                <button
+                  key={it.id}
+                  onClick={() => setEdit(it)}
+                  className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+                  style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                >
+                  <span className="w-7 shrink-0 text-center text-xl">
+                    {it.category ? avatarGlyph(it.category.name) : "•"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{it.name}</p>
+                    <p className="truncate text-xs" style={{ color: "var(--hint)" }}>
+                      {it.category ? displayName(it.category.name) : "—"} · day {it.dayOfMonth}
                     </p>
-                  </button>
-                );
-              })}
+                  </div>
+                  <span className="shrink-0 font-semibold" style={{ color: sec.kind === "income" ? "#10b981" : "var(--text)" }}>
+                    {formatCents(it.amount)}
+                  </span>
+                </button>
+              ))}
             </div>
           );
         })}
@@ -113,13 +131,14 @@ export default function Categories() {
         onClick={() => setCreating(true)}
         className="fixed bottom-20 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition active:scale-90"
         style={{ background: "var(--button)" }}
-        aria-label="New category"
+        aria-label="New planned item"
       >
         <Plus size={26} />
       </button>
 
       {creating && (
-        <CategoryEditor
+        <PlannedItemEditor
+          categories={categories}
           onClose={() => setCreating(false)}
           onSaved={() => {
             setCreating(false);
@@ -128,8 +147,9 @@ export default function Categories() {
         />
       )}
       {edit && (
-        <CategoryEditor
-          category={edit}
+        <PlannedItemEditor
+          categories={categories}
+          edit={edit}
           onClose={() => setEdit(null)}
           onSaved={() => {
             setEdit(null);
@@ -137,7 +157,6 @@ export default function Categories() {
           }}
         />
       )}
-
     </main>
   );
 }
