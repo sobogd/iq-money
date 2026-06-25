@@ -132,14 +132,9 @@ export default function Home() {
                     className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
-                      style={{ background: "var(--bg)" }}
-                    >
-                      {glyph}
-                    </span>
+                    <span className="w-6 shrink-0 text-center text-xl">{glyph}</span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{note || catName}</p>
+                      <p className="truncate text-sm font-medium uppercase">{note || catName}</p>
                       {note && <p className="truncate text-xs" style={{ color: "var(--hint)" }}>{catName}</p>}
                     </div>
                     <span className="shrink-0 font-semibold" style={{ color: t.kind === "income" ? "#10b981" : "var(--text)" }}>

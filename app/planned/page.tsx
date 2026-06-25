@@ -86,15 +86,11 @@ export default function Planned() {
         <div className="relative shrink-0">
           <button
             onClick={() => setFilterOpen((o) => !o)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border transition active:scale-90"
-            style={{
-              borderColor: activeCat ? "var(--button)" : "var(--field-border)",
-              background: activeCat ? "var(--button)" : "var(--card)",
-              color: activeCat ? "#fff" : "var(--hint)",
-            }}
+            className="flex h-9 w-9 items-center justify-center transition active:scale-90"
+            style={{ color: activeCat ? "var(--button)" : "var(--hint)" }}
             aria-label="Фильтр по категории"
           >
-            <Filter size={18} />
+            <Filter size={20} />
           </button>
 
           {filterOpen && (
@@ -165,12 +161,7 @@ export default function Planned() {
                     className="flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
-                      style={{ background: "var(--bg)" }}
-                    >
-                      {avatarGlyph(cat.name)}
-                    </span>
+                    <span className="w-6 shrink-0 text-center text-xl">{avatarGlyph(cat.name)}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{it.name}</p>
                       <p className="truncate text-xs" style={{ color: "var(--hint)" }}>
