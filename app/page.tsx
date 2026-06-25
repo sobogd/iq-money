@@ -128,7 +128,7 @@ export default function Home() {
                     className="flex items-center justify-between gap-3 rounded-2xl border p-3 text-left shadow-sm transition active:scale-[0.99]"
                     style={{ background: "var(--card)", borderColor: "var(--border)" }}
                   >
-                    <p className="min-w-0 flex-1 truncate font-medium">
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium">
                       <span className="mr-1.5">{glyph}</span>
                       {label}
                     </p>
